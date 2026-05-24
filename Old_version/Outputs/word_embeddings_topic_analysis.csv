@@ -1,0 +1,81 @@
+keyword_pt,similarity_score,topic,translation_en
+rapido,0.926348865032196,positive_delivery,fast
+adiantado,0.9001630544662476,positive_delivery,in advance
+perfeita,0.8803649544715881,positive_delivery,perfect
+previsto,0.8767223358154297,positive_delivery,predicted
+estipulado,0.8735495805740356,positive_delivery,stipulated
+estimado,0.8702220320701599,positive_delivery,estimated
+praso,0.8697495460510254,positive_delivery,term
+determinado,0.8663244247436523,positive_delivery,determined
+prazosuper,0.8611148595809937,positive_delivery,deadlinesuper
+prometido,0.8599745035171509,positive_delivery,promised
+rapidinho,0.8575085997581482,positive_delivery,quickly
+condições,0.8542034029960632,positive_delivery,conditions
+embalada,0.8510026335716248,positive_delivery,packaged
+prazorecomendo,0.8509798645973206,positive_delivery,deadline I recommend
+ótimas,0.8500175476074219,positive_delivery,great
+prazoproduto,0.8492414355278015,positive_delivery,deadlineproduct
+direitinho,0.8488748073577881,positive_delivery,properly
+rapidamente,0.8473739624023438,positive_delivery,quickly
+limite,0.8461410403251648,positive_delivery,limit
+perfeitas,0.8441035747528076,positive_delivery,perfect
+otimo,0.9681144952774048,positive_product,excellent
+maravilhoso,0.937025785446167,positive_product,wonderful
+exelente,0.9152717590332031,positive_product,excellent
+adorei,0.9139955639839172,positive_product,I loved
+gostei,0.9094604253768921,positive_product,I liked
+expectativa,0.9055594205856323,positive_product,expectation
+amei,0.9026443958282471,positive_product,I loved
+surpreendeu,0.8984214067459106,positive_product,surprised
+adoramos,0.8939093947410583,positive_product,we love it
+amando,0.8869236707687378,positive_product,loving
+perfeita,0.8860360980033875,positive_product,perfect
+acessível,0.8858545422554016,positive_product,accessible
+atende,0.8826236128807068,positive_product,he meets
+espectativas,0.8817324042320251,positive_product,expectations
+mto,0.8797865509986877,positive_product,very
+cumpre,0.8779516220092773,positive_product,fulfills
+eficiente,0.8776274919509888,positive_product,efficient
+agilidade,0.8762373924255371,positive_product,agility
+amou,0.8760861754417419,positive_product,loved
+top,0.8751742243766785,positive_product,top
+recebimento,0.9299209117889404,negative_delivery,receipt
+venceu,0.923465371131897,negative_delivery,won
+passou,0.9210736751556396,negative_delivery,it happened
+passaram,0.9150597453117371,negative_delivery,passed
+abril,0.9115638732910156,negative_delivery,April
+ate,0.9070960283279419,negative_delivery,until
+chegada,0.905585527420044,negative_delivery,arrival
+trânsito,0.8979995250701904,negative_delivery,transit
+último,0.8969025015830994,negative_delivery,last
+seguinte,0.8954241871833801,negative_delivery,following
+entregaria,0.8927435874938965,negative_delivery,would deliver
+semanas,0.8897562026977539,negative_delivery,weeks
+encomenda,0.889624297618866,negative_delivery,order
+trinta,0.8884948492050171,negative_delivery,thirty
+recebir,0.8825547099113464,negative_delivery,receive
+utilizei,0.8808010220527649,negative_delivery,I used
+postado,0.8806048631668091,negative_delivery,posted
+março,0.8781294226646423,negative_delivery,March
+dao,0.8777108192443848,negative_delivery,dao
+parado,0.8756899833679199,negative_delivery,stopped
+errada,0.9641795754432678,negative_product,wrong
+preto,0.9563050270080566,negative_product,black
+cartucho,0.9524978995323181,negative_product,cartridge
+rosa,0.951996386051178,negative_product,pink
+quebrado,0.9473997354507446,negative_product,broken
+azul,0.9472736120223999,negative_product,blue
+vermelha,0.9469148516654968,negative_product,red
+preta,0.9432217478752136,negative_product,black
+mandaram,0.9415909647941589,negative_product,sent
+colorido,0.9412875175476074,negative_product,colorful
+peça,0.9408538937568665,negative_product,part
+impressora,0.9400004744529724,negative_product,printer
+bege,0.9392032027244568,negative_product,beige
+branco,0.9371487498283386,negative_product,white
+rolo,0.9342830777168274,negative_product,roll
+vermelho,0.9327917695045471,negative_product,red
+solicitada,0.9319356083869934,negative_product,requested
+pedi,0.9310856461524963,negative_product,I asked
+cabo,0.930395245552063,negative_product,cable
+branca,0.9299166798591614,negative_product,white
