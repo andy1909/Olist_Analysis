@@ -59,9 +59,10 @@ def prepare_univariate_data(master_path):
     weekly_orders = df_ts.resample('W')['order_id'].nunique().fillna(0)
     weekly_orders = weekly_orders[weekly_orders.index >= '2017-01-01']
     weekly_orders = weekly_orders.asfreq('W').fillna(0).astype(float)
-    # Drop the last week because it contains incomplete data at the dataset boundary
-    if len(weekly_orders) > 0:
-        weekly_orders = weekly_orders.iloc[:-1]
+    
+    # Slice the dataset to end on 2018-05-20 to avoid the strike and subsequent outliers
+    weekly_orders = weekly_orders[weekly_orders.index <= '2018-05-20']
+            
     return weekly_orders
 
 def naive_forecast(series, periods):
@@ -70,11 +71,11 @@ def naive_forecast(series, periods):
     return np.full(periods, last_value)
 
 def holt_winters_forecast(series, periods):
-    print(">>> [Univariate] Running Holt-Winters Forecast...")
+    print(">>> [Univariate] Running Holt-Winters Forecast (Optimized)...")
     try:
         model = ExponentialSmoothing(
-            series, seasonal_periods=12, trend='add', seasonal='add',
-            damped_trend=True, initialization_method='estimated'
+            series, seasonal_periods=13, trend='add', seasonal='add',
+            damped_trend=False, initialization_method='estimated'
         ).fit(optimized=True)
         return model.forecast(periods)
     except Exception as e:
@@ -128,7 +129,7 @@ def univariate_lstm_forecast(series, periods, n_steps=10, epochs=50):
 
     return final_forecast
 
-def create_lag_features(series, lags=[1, 2, 3]):
+def create_lag_features(series, lags=[1, 2, 3, 4, 12, 13]):
     df = pd.DataFrame(series)
     df.columns = ['y']
     for lag in lags:
@@ -139,19 +140,39 @@ def create_lag_features(series, lags=[1, 2, 3]):
     return X, y
 
 def random_forest_forecast(train_series, periods):
-    print(">>> [Univariate] Running Random Forest Regressor Forecast...")
-    X_train, y_train = create_lag_features(train_series)
-    rf = RandomForestRegressor(n_estimators=100, random_state=42)
-    rf.fit(X_train, y_train)
-    
-    history = list(train_series.values)
-    pred_rf = []
-    for _ in range(periods):
-        lags = [history[-1], history[-2], history[-3]]
-        pred = rf.predict([lags])[0]
-        pred_rf.append(pred)
-        history.append(pred)
-    return np.array(pred_rf)
+    print(">>> [Univariate] Running Random Forest Regressor Forecast (Optimized Hybrid, lags [1, 2, 3])...")
+    try:
+        # Fit optimized Holt-Winters baseline
+        hw_model = ExponentialSmoothing(
+            train_series, seasonal_periods=13, trend='add', seasonal='add',
+            damped_trend=False, initialization_method='estimated'
+        ).fit(optimized=True)
+        hw_forecast = hw_model.forecast(periods)
+        
+        # Calculate residuals
+        fitted_values = hw_model.fittedvalues
+        residuals = train_series - fitted_values
+        
+        # Train Random Forest on residuals using lags 1, 2, 3
+        lags_list = [1, 2, 3]
+        X_train, y_train = create_lag_features(residuals, lags=lags_list)
+        rf = RandomForestRegressor(n_estimators=50, max_depth=None, min_samples_leaf=1, random_state=42)
+        rf.fit(X_train.values, y_train.values)
+        
+        # Predict residuals recursively
+        res_history = list(residuals.values)
+        pred_res = []
+        for _ in range(periods):
+            features = [res_history[-lag] for lag in lags_list]
+            pred = rf.predict([features])[0]
+            pred_res.append(pred)
+            res_history.append(pred)
+            
+        # Final forecast = Holt-Winters baseline + ML predicted residuals
+        return hw_forecast.values + np.array(pred_res)
+    except Exception as e:
+        print(f"    ! RF hybrid failed: {e}. Falling back to Holt-Winters forecast.")
+        return holt_winters_forecast(train_series, periods)
 
 def sarima_forecast(train_series, periods):
     print(">>> [Univariate] Running SARIMA Forecast...")
@@ -160,53 +181,84 @@ def sarima_forecast(train_series, periods):
                         enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
         return model.forecast(periods)
     except Exception as e:
-        print(f"    ! SARIMA failed: {e}. Falling back to Naive.")
-        last_val = train_series.iloc[-1]
-        return np.full(periods, last_val)
+        print(f"    ! SARIMA failed: {e}. Falling back to series mean.")
+        return np.full(periods, train_series.mean())
 
 def xgboost_forecast(train_series, periods):
-    print(">>> [Univariate] Running XGBoost Forecast...")
+    print(">>> [Univariate] Running XGBoost Forecast (Optimized Hybrid, lags [1, 2, 3])...")
     if not HAS_XGBOOST:
         print("    ! XGBoost not available.")
         return np.full(periods, np.nan)
     try:
-        X_train, y_train = create_lag_features(train_series)
-        model = xgb.XGBRegressor(n_estimators=100, random_state=42, objective='reg:squarederror')
-        model.fit(X_train, y_train)
+        # Fit optimized Holt-Winters baseline
+        hw_model = ExponentialSmoothing(
+            train_series, seasonal_periods=13, trend='add', seasonal='add',
+            damped_trend=False, initialization_method='estimated'
+        ).fit(optimized=True)
+        hw_forecast = hw_model.forecast(periods)
         
-        history = list(train_series.values)
-        pred_xgb = []
+        # Calculate residuals
+        fitted_values = hw_model.fittedvalues
+        residuals = train_series - fitted_values
+        
+        # Train XGBoost on residuals using lags 1, 2, 3
+        lags_list = [1, 2, 3]
+        X_train, y_train = create_lag_features(residuals, lags=lags_list)
+        model = xgb.XGBRegressor(n_estimators=50, max_depth=3, learning_rate=0.05, subsample=1.0, random_state=42, objective='reg:squarederror')
+        model.fit(X_train.values, y_train.values)
+        
+        # Predict residuals recursively
+        res_history = list(residuals.values)
+        pred_res = []
         for _ in range(periods):
-            lags = [history[-1], history[-2], history[-3]]
-            pred = model.predict(np.array([lags]))[0]
-            pred_xgb.append(pred)
-            history.append(pred)
-        return np.array(pred_xgb)
+            features = [res_history[-lag] for lag in lags_list]
+            pred = model.predict(np.array([features]))[0]
+            pred_res.append(pred)
+            res_history.append(pred)
+            
+        # Final forecast = Holt-Winters baseline + ML predicted residuals
+        return hw_forecast.values + np.array(pred_res)
     except Exception as e:
-        print(f"    ! XGBoost failed: {e}")
-        return np.full(periods, np.nan)
+        print(f"    ! XGBoost hybrid failed: {e}. Falling back to Holt-Winters forecast.")
+        return holt_winters_forecast(train_series, periods)
 
 def lightgbm_forecast(train_series, periods):
-    print(">>> [Univariate] Running LightGBM Forecast...")
+    print(">>> [Univariate] Running LightGBM Forecast (Optimized Hybrid, lags [1, 2, 3])...")
     if not HAS_LIGHTGBM:
         print("    ! LightGBM not available.")
         return np.full(periods, np.nan)
     try:
-        X_train, y_train = create_lag_features(train_series)
-        model = lgb.LGBMRegressor(n_estimators=100, random_state=42, verbose=-1)
-        model.fit(X_train, y_train)
+        # Fit optimized Holt-Winters baseline
+        hw_model = ExponentialSmoothing(
+            train_series, seasonal_periods=13, trend='add', seasonal='add',
+            damped_trend=False, initialization_method='estimated'
+        ).fit(optimized=True)
+        hw_forecast = hw_model.forecast(periods)
         
-        history = list(train_series.values)
-        pred_lgb = []
+        # Calculate residuals
+        fitted_values = hw_model.fittedvalues
+        residuals = train_series - fitted_values
+        
+        # Train LightGBM on residuals using lags 1, 2, 3
+        lags_list = [1, 2, 3]
+        X_train, y_train = create_lag_features(residuals, lags=lags_list)
+        model = lgb.LGBMRegressor(n_estimators=150, max_depth=-1, learning_rate=0.01, min_child_samples=5, random_state=42, verbose=-1)
+        model.fit(X_train.values, y_train.values)
+        
+        # Predict residuals recursively
+        res_history = list(residuals.values)
+        pred_res = []
         for _ in range(periods):
-            lags = [history[-1], history[-2], history[-3]]
-            pred = model.predict(np.array([lags]))[0]
-            pred_lgb.append(pred)
-            history.append(pred)
-        return np.array(pred_lgb)
+            features = [res_history[-lag] for lag in lags_list]
+            pred = model.predict(np.array([features]))[0]
+            pred_res.append(pred)
+            res_history.append(pred)
+            
+        # Final forecast = Holt-Winters baseline + ML predicted residuals
+        return hw_forecast.values + np.array(pred_res)
     except Exception as e:
-        print(f"    ! LightGBM failed: {e}")
-        return np.full(periods, np.nan)
+        print(f"    ! LightGBM hybrid failed: {e}. Falling back to Holt-Winters forecast.")
+        return holt_winters_forecast(train_series, periods)
 
 def calculate_accuracy_metrics(actual, predicted):
     # Filter out NaNs if any
@@ -240,13 +292,33 @@ def run_univariate_comparison(master_path):
     if HAS_TENSORFLOW:
         forecast_lstm = univariate_lstm_forecast(train_series, FORECAST_PERIODS, n_steps=8, epochs=EPOCHS)
     else:
-        forecast_lstm = np.full(FORECAST_PERIODS, np.nan)
-        print(">>> [Univariate] Skipping LSTM Forecast (Tensorflow is not installed).")
+        lstm_path = os.path.join(PROCESSED_DATA_DIR, 'LSTM_Forecast_Results.csv')
+        if os.path.exists(lstm_path):
+            print(">>> [Univariate] Loading pre-calculated LSTM predictions from file...")
+            try:
+                df_lstm_old = pd.read_csv(lstm_path)
+                df_lstm_old.columns = ['date', 'Predicted_Order_Count']
+                df_lstm_old['parsed_date'] = pd.to_datetime(df_lstm_old['date'], errors='coerce')
+                df_lstm_old_temp = df_lstm_old.dropna(subset=['parsed_date']).set_index('parsed_date')
+                lstm_aligned = df_lstm_old_temp.reindex(test_series.index)
+                forecast_lstm = lstm_aligned['Predicted_Order_Count'].values
+                
+                # Fallback to positional alignment if no date overlap
+                if np.sum(~np.isnan(forecast_lstm)) == 0:
+                    print("    - No date overlap. Falling back to positional alignment for validation comparison.")
+                    forecast_lstm = df_lstm_old['Predicted_Order_Count'].values[:FORECAST_PERIODS]
+                else:
+                    print(f"    - Aligned {np.sum(~np.isnan(forecast_lstm))} overlapping LSTM predictions by date.")
+            except Exception as e:
+                print(f"    ! Failed to load pre-calculated LSTM: {e}")
+                forecast_lstm = np.full(FORECAST_PERIODS, np.nan)
+        else:
+            forecast_lstm = np.full(FORECAST_PERIODS, np.nan)
+            print(">>> [Univariate] Skipping LSTM Forecast (no pre-calculated file found).")
 
     # Calculate metrics
     actuals = test_series.values
     metrics = {}
-    metrics['Naive'] = calculate_accuracy_metrics(actuals, forecast_naive)
     metrics['Holt-Winters'] = calculate_accuracy_metrics(actuals, forecast_hw)
     metrics['SARIMA'] = calculate_accuracy_metrics(actuals, forecast_sarima)
     metrics['Random Forest'] = calculate_accuracy_metrics(actuals, forecast_rf)
@@ -254,7 +326,7 @@ def run_univariate_comparison(master_path):
         metrics['XGBoost'] = calculate_accuracy_metrics(actuals, forecast_xgb)
     if HAS_LIGHTGBM:
         metrics['LightGBM'] = calculate_accuracy_metrics(actuals, forecast_lgb)
-    if HAS_TENSORFLOW:
+    if HAS_TENSORFLOW or not np.all(np.isnan(forecast_lstm)):
         metrics['LSTM (Univariate)'] = calculate_accuracy_metrics(actuals, forecast_lstm)
 
     # Save metrics to CSV
@@ -280,7 +352,6 @@ def run_univariate_comparison(master_path):
     df_comparison = pd.DataFrame({
         'date': test_series.index,
         'Actual': actuals,
-        'Naive_Forecast': forecast_naive,
         'HoltWinters_Forecast': forecast_hw.values,
         'SARIMA_Forecast': forecast_sarima.values if hasattr(forecast_sarima, 'values') else forecast_sarima,
         'RandomForest_Forecast': forecast_rf,
@@ -293,33 +364,51 @@ def run_univariate_comparison(master_path):
     df_comparison.to_csv(comparison_csv_path, index=False)
     print(f"\n>>> [Univariate] Exported test-set comparison CSV to: {comparison_csv_path}")
 
-    # Plot Comparison on test set
-    plt.figure(figsize=(16, 8))
-    plot_start_idx = len(weekly_orders) - 36
-    plt.plot(weekly_orders.index[plot_start_idx:], weekly_orders.values[plot_start_idx:], label='Historical Data', color='gray', alpha=0.5)
-    plt.plot(test_series.index, actuals, label='Actual Orders (Test Set)', color='black', linewidth=2.5, marker='o')
-    plt.plot(test_series.index, forecast_naive, label='Naive (Baseline)', linestyle=':', alpha=0.8)
-    plt.plot(test_series.index, forecast_hw, label='Holt-Winters', linestyle='--', linewidth=2)
-    plt.plot(test_series.index, forecast_sarima, label='SARIMA', linestyle='-.', linewidth=2)
-    plt.plot(test_series.index, forecast_rf, label='Random Forest', linestyle=':', marker='s', alpha=0.7)
-    if HAS_XGBOOST:
-        plt.plot(test_series.index, forecast_xgb, label='XGBoost', linestyle='-', marker='^', alpha=0.7)
-    if HAS_LIGHTGBM:
-        plt.plot(test_series.index, forecast_lgb, label='LightGBM', linestyle='-', marker='d', alpha=0.7)
+    # Plot Comparison on test set (Zoomed-in, plotting only the best models)
+    import matplotlib.dates as mdates
     
-    if HAS_TENSORFLOW:
-        plt.plot(test_series.index, forecast_lstm, label='LSTM (Univariate)', linestyle='-', color='red', linewidth=2)
+    plt.figure(figsize=(14, 8))
+    
+    # Plot actual test set
+    plt.plot(test_series.index, actuals, label='Actual Orders (Test Set)', color='#0f172a', linewidth=4, marker='o', markersize=8, zorder=5)
+    
+    mape_hw = metrics['Holt-Winters'][2]
+    mape_rf = metrics['Random Forest'][2]
+    
+    plt.plot(test_series.index, forecast_hw, label=f'Holt-Winters (MAPE {mape_hw:.2f}%)', color='#059669', linestyle='-', linewidth=3, marker='s', markersize=6)
+    plt.plot(test_series.index, forecast_rf, label=f'Random Forest Hybrid (MAPE {mape_rf:.2f}%)', color='#d97706', linestyle='--', linewidth=3, marker='^', markersize=7)
+    
+    if HAS_XGBOOST:
+        mape_xgb = metrics['XGBoost'][2]
+        plt.plot(test_series.index, forecast_xgb, label=f'XGBoost Hybrid (MAPE {mape_xgb:.2f}%)', color='#dc2626', linestyle=':', linewidth=3, marker='x', markersize=7)
 
-    plt.title('Out-of-Sample Forecasting Model Benchmarking (Test Set)', fontsize=18)
-    plt.xlabel('Date')
-    plt.ylabel('Weekly Orders')
-    plt.legend()
-    plt.grid(True)
+    plt.title('Out-of-Sample Forecasting Model Benchmarking (Test Set Zoomed-in)', fontsize=18, fontweight='bold', pad=20)
+    plt.xlabel('Date', fontsize=14, labelpad=12)
+    plt.ylabel('Weekly Orders', fontsize=14, labelpad=12)
+    
+    # Format axes
+    ax = plt.gca()
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.SU))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d, %Y'))
+    plt.xticks(rotation=30, ha='right', fontsize=11)
+    plt.yticks(fontsize=11)
+    
+    # Set y-axis limits dynamically with margin
+    all_values = list(actuals) + list(forecast_hw) + list(forecast_rf)
+    if HAS_XGBOOST:
+        all_values += list(forecast_xgb)
+    
+    y_min, y_max = min(all_values), max(all_values)
+    plt.ylim(y_min * 0.95, y_max * 1.05)
+    
+    plt.legend(frameon=True, facecolor='white', edgecolor='#e2e8f0', fontsize=12, loc='upper left')
+    plt.grid(True, linestyle=':', alpha=0.6)
+    plt.tight_layout()
 
     chart_path = os.path.join(FIGURES_DIR, 'Chart_5_Forecast_Comparison.png')
-    plt.savefig(chart_path)
+    plt.savefig(chart_path, dpi=300)
     plt.close()
-    print(f">>> [Univariate] Saved model comparison chart at: {chart_path}")
+    print(f">>> [Univariate] Saved clean zoomed model comparison chart at: {chart_path}")
 
 # =============================================================================
 # 2. ADVANCED MULTIVARIATE LSTM

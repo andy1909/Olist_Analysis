@@ -1,0 +1,43 @@
+[ 2026-06-09 13:25:12,935 ] 97 werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.11:5000
+[ 2026-06-09 13:25:12,935 ] 97 werkzeug - INFO - [33mPress CTRL+C to quit[0m
+[ 2026-06-09 13:25:20,954 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:25:20] "HEAD / HTTP/1.1" 200 -
+[ 2026-06-09 13:26:05,729 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:05] "GET / HTTP/1.1" 200 -
+[ 2026-06-09 13:26:05,749 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:05] "GET /static/css/common.css HTTP/1.1" 200 -
+[ 2026-06-09 13:26:05,750 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:05] "GET /static/css/index.css HTTP/1.1" 200 -
+[ 2026-06-09 13:26:05,790 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:05] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+[ 2026-06-09 13:26:08,550 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:08] "GET /predictdata HTTP/1.1" 200 -
+[ 2026-06-09 13:26:08,569 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:08] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:26:08,571 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:26:08] "GET /static/css/home.css HTTP/1.1" 200 -
+[ 2026-06-09 13:27:06,817 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:27:06] "POST /predictdata HTTP/1.1" 200 -
+[ 2026-06-09 13:27:06,833 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:27:06] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:27:06,833 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:27:06] "[36mGET /static/css/home.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:27:10,981 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:27:10] "GET / HTTP/1.1" 200 -
+[ 2026-06-09 13:27:11,000 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:27:11] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:27:11,001 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:27:11] "[36mGET /static/css/index.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:42:28,199 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:42:28] "GET / HTTP/1.1" 200 -
+[ 2026-06-09 13:42:28,211 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:42:28] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:42:28,212 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:42:28] "[36mGET /static/css/index.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:42:30,318 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:42:30] "GET /predictdata HTTP/1.1" 200 -
+[ 2026-06-09 13:42:30,333 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:42:30] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:42:30,333 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:42:30] "[36mGET /static/css/home.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:47:01,614 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:01] "GET / HTTP/1.1" 200 -
+[ 2026-06-09 13:47:01,627 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:01] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:47:01,627 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:01] "[36mGET /static/css/index.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:47:03,737 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:03] "GET /predictdata HTTP/1.1" 200 -
+[ 2026-06-09 13:47:03,752 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:03] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:47:03,753 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:03] "[36mGET /static/css/home.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:47:20,884 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:20] "POST /predictdata HTTP/1.1" 200 -
+[ 2026-06-09 13:47:20,900 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:20] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 13:47:20,900 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 13:47:20] "[36mGET /static/css/home.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 14:32:50,251 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:50] "GET / HTTP/1.1" 200 -
+[ 2026-06-09 14:32:50,284 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:50] "GET /static/css/common.css HTTP/1.1" 200 -
+[ 2026-06-09 14:32:50,285 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:50] "GET /static/css/index.css HTTP/1.1" 200 -
+[ 2026-06-09 14:32:50,318 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:50] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+[ 2026-06-09 14:32:50,320 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:50] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 14:32:50,321 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:50] "[36mGET /static/css/index.css HTTP/1.1[0m" 304 -
+[ 2026-06-09 14:32:56,237 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:56] "GET /predictdata HTTP/1.1" 200 -
+[ 2026-06-09 14:32:56,244 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:56] "GET /static/css/home.css HTTP/1.1" 200 -
+[ 2026-06-09 14:32:56,245 ] 97 werkzeug - INFO - 127.0.0.1 - - [09/Jun/2026 14:32:56] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -

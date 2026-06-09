@@ -1,0 +1,20 @@
+[ 2026-06-09 13:15:18,618 ] 21 root - INFO - Entered the data ingestion method or component for Olist
+[ 2026-06-09 13:15:19,069 ] 37 root - INFO - Successfully merged Olist dataframes
+[ 2026-06-09 13:15:19,374 ] 65 root - INFO - Train test split initiated
+[ 2026-06-09 13:15:19,622 ] 71 root - INFO - Ingestion of Olist data is completed
+[ 2026-06-09 13:15:19,666 ] 70 root - INFO - Read train and test data completed
+[ 2026-06-09 13:15:19,666 ] 71 root - INFO - Obtaining preprocessing object
+[ 2026-06-09 13:15:19,666 ] 50 root - INFO - Numerical columns: ['product_weight_g', 'product_length_cm', 'product_height_cm', 'product_width_cm', 'price', 'freight_value']
+[ 2026-06-09 13:15:19,666 ] 51 root - INFO - Categorical columns: ['seller_state', 'customer_state']
+[ 2026-06-09 13:15:19,667 ] 82 root - INFO - Applying preprocessing object on training and testing dataframes
+[ 2026-06-09 13:15:19,753 ] 96 root - INFO - Saved preprocessing object
+[ 2026-06-09 13:15:19,754 ] 24 root - INFO - Splitting training and test input data
+[ 2026-06-09 13:15:19,754 ] 42 root - INFO - Training model: Decision Tree
+[ 2026-06-09 13:15:20,276 ] 48 root - INFO - Model Decision Tree accuracy: 0.8783
+[ 2026-06-09 13:15:20,276 ] 42 root - INFO - Training model: Random Forest
+[ 2026-06-09 13:15:24,087 ] 48 root - INFO - Model Random Forest accuracy: 0.9213
+[ 2026-06-09 13:15:24,087 ] 42 root - INFO - Training model: Logistic Regression
+[ 2026-06-09 13:15:24,258 ] 48 root - INFO - Model Logistic Regression accuracy: 0.9218
+[ 2026-06-09 13:15:24,258 ] 42 root - INFO - Training model: XGBoost
+[ 2026-06-09 13:15:26,243 ] 48 root - INFO - Model XGBoost accuracy: 0.9218
+[ 2026-06-09 13:15:26,243 ] 61 root - INFO - Best model found: Logistic Regression with accuracy: 0.9218
