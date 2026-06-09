@@ -6,3 +6,9 @@ matplotlib
 seaborn
 statsmodels
 openpyxl
+scikit-learn
+tensorflow
+gensim
+nltk
+wordcloud
+googletrans==3.1.0a0

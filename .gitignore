@@ -1,0 +1,41 @@
+# .gitignore
+
+# Python virtual environment
+.venv/
+venv/
+env/
+ENV/
+bin/
+include/
+lib/
+share/
+pyvenv.cfg
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Datasets (Avoid committing big data files to GitHub)
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+# Model weights
+models/*
+!models/.gitkeep
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

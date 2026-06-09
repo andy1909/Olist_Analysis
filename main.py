@@ -1,146 +1,124 @@
 # main.py
 import os
 import pandas as pd
-from modules import data_ingestion, data_processing, data_analytics ,visualization
+from src import ingestion, processing, analytics, visualization
 
-# Cấu hình đường dẫn
+# Path configurations
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'RawData')
-OUTPUT_DIR = os.path.join(BASE_DIR, 'Outputs')
+RAW_DATA_DIR = os.path.join(BASE_DIR, 'data', 'raw')
+PROCESSED_DATA_DIR = os.path.join(BASE_DIR, 'data', 'processed')
+FIGURES_DIR = os.path.join(BASE_DIR, 'reports', 'figures')
 
-# Tạo thư mục output nếu chưa có
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+os.makedirs(FIGURES_DIR, exist_ok=True)
 
 def main():
-    print("=== STARTING DATA PIPELINE ===")
+    print("====================================================")
+    print("STARTING OLIST LOGISTICS ETL & BUSINESS PIPELINE")
+    print("====================================================")
 
-    # BƯỚC 1: DATA INGESTION (THU THẬP & CHUYỂN ĐỔI)
-    # 1.1 Tạo file giả lập (JSON/XML)
-    data_ingestion.convert_and_save_files(DATA_DIR)
+    # -------------------------------------------------------------------------
+    # STEP 1: DATA INGESTION
+    # -------------------------------------------------------------------------
+    print("\n--- STEP 1: DATA INGESTION ---")
+    
+    # 1.1 Generate simulated JSON & XML datasets from CSV
+    ingestion.convert_and_save_files(RAW_DATA_DIR)
 
-    # 1.2 Lấy dữ liệu API
-    df_holidays = data_ingestion.fetch_holidays_api()
+    # 1.2 Fetch Brazil public holidays from API
+    df_holidays = ingestion.fetch_holidays_api()
 
-    # 1.3 Load các dữ liệu lên
-    df_orders, df_customers, df_products = data_ingestion.load_raw_data(DATA_DIR)
+    # 1.3 Load raw datasets
+    df_orders, df_customers, df_products = ingestion.load_raw_data(RAW_DATA_DIR)
 
-    # Kiểm tra nhanh
-    print(f"\n--- Data Summary ---")
-    print(f"Orders (CSV): {df_orders.shape}")
-    print(f"Customers (JSON): {df_customers.shape}")
-    print(f"Products (XML): {df_products.shape}")
-    print(f"Holidays (API): {df_holidays.shape}")
+    print(f"\nIngestion Summary:")
+    print(f"  - Orders loaded (CSV): {df_orders.shape}")
+    print(f"  - Customers loaded (JSON): {df_customers.shape}")
+    print(f"  - Products loaded (XML): {df_products.shape}")
+    print(f"  - Brazil Holidays (API): {df_holidays.shape}")
 
-    # Lưu ngày lễ ra file CSV
-    df_holidays.to_csv(os.path.join(OUTPUT_DIR, 'brazil_holidays.csv'), index=False)
-    print(f"\n-> Đã lưu file ngày lễ tại: {os.path.join(OUTPUT_DIR, 'brazil_holidays.csv')}")
+    # Save holidays CSV
+    holidays_path = os.path.join(PROCESSED_DATA_DIR, 'brazil_holidays.csv')
+    df_holidays.to_csv(holidays_path, index=False)
+    print(f"    -> Saved holidays table to: {holidays_path}")
 
-    print("\n=== BƯỚC 1 HOÀN TẤT ===")
+    # -------------------------------------------------------------------------
+    # STEP 2: DATA INTEGRATION, CLEANING & FEATURE ENGINEERING
+    # -------------------------------------------------------------------------
+    print("\n--- STEP 2: DATA INTEGRATION & PROCESSING ---")
+    
+    # 2.1 Clean date types
+    df_orders, df_holidays = processing.clean_and_convert_types(df_orders, df_holidays)
 
+    # 2.2 Load order items detail CSV
+    items_path = os.path.join(RAW_DATA_DIR, 'olist_order_items_dataset.csv')
+    if not os.path.exists(items_path):
+        raise FileNotFoundError(f"Missing essential items dataset: {items_path}")
+    df_items = pd.read_csv(items_path)
+    print(f"  - Loaded order items details: {df_items.shape}")
 
-# # # ----------------------------------------------------------------------------------------------------------# # #
-    # LOAD DỮ LIỆU ĐỂ CHUẨN BỊ CHO BƯỚC 2
-    print("\n--- LOADING DATA ---")
-    # 1. Load các file đã xử lý ở Bước 1
-    orders, customers, products = data_ingestion.load_raw_data(DATA_DIR)
+    # 2.3 Merge datasets (Data Fusion)
+    master_df = processing.merge_data(df_orders, df_items, df_customers, df_products)
 
-    # 2. Load thêm Order Items
-    items_path = os.path.join(DATA_DIR, 'olist_order_items_dataset.csv')
-    items = pd.read_csv(items_path)
-    print(f"Loaded Order Items: {items.shape}")
+    # 2.4 Handle missing data
+    master_df = processing.handle_missing_data(master_df)
 
-    # 3. Load Holidays (từ file csv đã lưu ở Bước 1 để đỡ gọi API lại)
-    holidays_path = os.path.join(OUTPUT_DIR, 'brazil_holidays.csv')
-    if os.path.exists(holidays_path):
-        holidays = pd.read_csv(holidays_path)
-    else:
-        # Fallback nếu chưa có file thì gọi hàm API rỗng hoặc xử lý lỗi
-        print("Cảnh báo: Không tìm thấy file holidays, hãy chạy lại Bước 1.")
-        holidays = pd.DataFrame()
+    # 2.5 Feature Engineering: Supply chain and transit holidays
+    master_df = processing.create_logistics_features(master_df, df_holidays)
 
-    # --- BƯỚC 2: DATA INTEGRATION & CLEANING ---
-    print("\n--- STARTING STEP 2: PROCESSING ---")
+    # 2.6 Feature Engineering: Business aggregated features (weekly indicators)
+    # [BUG FIX] Call create_aggregated_features so multivariate models have actual data columns!
+    master_df = processing.create_aggregated_features(master_df)
 
-    # 2.1 Clean Date Types
-    orders, holidays = data_processing.clean_and_convert_types(orders, holidays)
+    # 2.7 Drop unnecessary columns
+    master_df = processing.drop_unnecessary_columns(master_df)
 
-    # 2.2 Merge Data (Tạo bảng Master)
-    master_df = data_processing.merge_data(orders, items, customers, products)
+    # Save final Master Logistics Data CSV
+    master_csv_path = os.path.join(PROCESSED_DATA_DIR, 'Master_Logistics_Data.csv')
+    master_df.to_csv(master_csv_path, index=False)
+    print(f"\n✅ Created clean Master dataset at: {master_csv_path}")
 
-    # 2.3 Handle Missing Data (Lọc dữ liệu trước khi tính toán)
-    master_df = data_processing.handle_missing_data(master_df)
+    # -------------------------------------------------------------------------
+    # STEP 3: ADVANCED ANALYTICS & LOGISTICS KPI AGGREGATION
+    # -------------------------------------------------------------------------
+    print("\n--- STEP 3: LOGISTICS KPI AGGREGATION ---")
+    
+    # 3.1 Aggregate KPIs (State and Monthly trends)
+    kpi_state, kpi_month = analytics.aggregate_kpis_for_dashboard(master_df)
+    
+    # Save KPI tables (lightweight, ideal for Power BI / Tableau connections)
+    kpi_state_path = os.path.join(PROCESSED_DATA_DIR, 'KPI_by_State.csv')
+    kpi_month_path = os.path.join(PROCESSED_DATA_DIR, 'KPI_by_Month.csv')
+    kpi_state.to_csv(kpi_state_path, index=False)
+    kpi_month.to_csv(kpi_month_path, index=False)
+    print(f"    - Saved state KPIs to: {kpi_state_path}")
+    print(f"    - Saved monthly KPIs to: {kpi_month_path}")
 
-    # 2.4 Feature Engineering (Tạo cột Logistics)
-    master_df = data_processing.create_logistics_features(master_df, holidays)
+    # 3.2 Run Baseline forecasting (Holt-Winters weekly demand prediction)
+    forecast_df = analytics.forecast_orders(master_df, periods=12)
+    forecast_csv_path = os.path.join(PROCESSED_DATA_DIR, 'Forecast_Results.csv')
+    forecast_df.to_csv(forecast_csv_path, index=False)
+    print(f"    - Saved forecast timeline to: {forecast_csv_path}")
 
-    # 2.5 Optimization (Xóa cột thừa)
-    master_df = data_processing.drop_unnecessary_columns(master_df)
+    # -------------------------------------------------------------------------
+    # STEP 4: VISUALIZATION PLOTS GENERATION
+    # -------------------------------------------------------------------------
+    print("\n--- STEP 4: REPORT VISUALIZATIONS GENERATION ---")
+    
+    # 4.1 Plot monthly logistics trend
+    visualization.plot_monthly_trend(kpi_month_path, FIGURES_DIR)
 
-    # Kiểm tra kết quả
-    print("\n--- FINAL DATA PREVIEW ---")
-    print(master_df[['order_id', 'lead_time_days', 'is_late', 'holidays_in_transit']].head())
+    # 4.2 Plot geographical late delivery performance
+    visualization.plot_state_performance(kpi_state_path, FIGURES_DIR)
 
-    # Lưu file Master cuối cùng ra CSV để dùng cho Dashboard
-    final_output_path = os.path.join(OUTPUT_DIR, 'Master_Logistics_Data.csv')
-    master_df.to_csv(final_output_path, index=False)
-    print(f"\n✅ Đã lưu file Master Data tại: {final_output_path}")
-    print("Sẵn sàng cho Bước 3 (Visual/Model)!")
+    # 4.3 Plot demand forecast chart
+    visualization.plot_forecast(forecast_csv_path, FIGURES_DIR)
 
-
-# # # ----------------------------------------------------------------------------------------------------------# # #
-    # --- BƯỚC 3: ADVANCED ANALYTICS & KPI ---
-    print("\n--- STARTING STEP 3: ANALYTICS ---")
-
-    # 3.1 Tính toán KPI tổng hợp (Aggregation)
-    kpi_state, kpi_month = data_analytics.aggregate_kpis_for_dashboard(master_df)
-
-    # Lưu KPI ra CSV riêng (File này rất nhẹ, dùng cho Tableau/PowerBI cực nhanh)
-    kpi_state.to_csv(os.path.join(OUTPUT_DIR, 'KPI_by_State.csv'), index=False)
-    kpi_month.to_csv(os.path.join(OUTPUT_DIR, 'KPI_by_Month.csv'), index=False)
-
-    # 3.2 Dự báo nhu cầu (Forecasting)
-    forecast_df = data_analytics.forecast_orders(master_df, periods=12) # Dự báo 12 tuần tới
-    forecast_df.to_csv(os.path.join(OUTPUT_DIR, 'Forecast_Results.csv'), index=False)
-
-    print(f"\n✅ Đã tạo các file phân tích tại thư mục {OUTPUT_DIR}:")
-    print("   1. KPI_by_State.csv (Dùng vẽ bản đồ)")
-    print("   2. KPI_by_Month.csv (Dùng vẽ biểu đồ xu hướng)")
-    print("   3. Forecast_Results.csv (Dùng vẽ đường dự báo tương lai)")
-
-    print("\n=== HOÀN TẤT TOÀN BỘ QUY TRÌNH PYTHON ===")
-    print("Bây giờ bạn hãy dùng các file trong thư mục Outputs để vẽ Dashboard.")
-
-
-# # # ----------------------------------------------------------------------------------------------------------# # #
-    # --- BƯỚC 4: VISUALIZATION ---
-    print("\n--- STARTING STEP 4: VISUALIZATION ---")
-
-    # Tạo thư mục chứa ảnh biểu đồ
-    CHARTS_DIR = os.path.join(OUTPUT_DIR, 'Charts')
-    os.makedirs(CHARTS_DIR, exist_ok=True)
-
-    # 4.1 Vẽ Trend
-    visualization.plot_monthly_trend(
-        os.path.join(OUTPUT_DIR, 'KPI_by_Month.csv'),
-        CHARTS_DIR
-    )
-
-    # 4.2 Vẽ State Performance
-    visualization.plot_state_performance(
-        os.path.join(OUTPUT_DIR, 'KPI_by_State.csv'),
-        CHARTS_DIR
-    )
-
-    # 4.3 Vẽ Forecast
-    visualization.plot_forecast(
-        os.path.join(OUTPUT_DIR, 'Forecast_Results.csv'),
-        CHARTS_DIR
-    )
-
-    print("\n=== HOÀN TẤT TOÀN BỘ DỰ ÁN ===")
-    print(f"1. Dữ liệu sạch nằm trong folder: {OUTPUT_DIR}")
-    print(f"2. Biểu đồ báo cáo nằm trong folder: {CHARTS_DIR}")
-
+    print("\n====================================================")
+    print("PIPELINE EXECUTION COMPLETED SUCCESSFULLY!")
+    print(f"  Processed tables: {PROCESSED_DATA_DIR}")
+    print(f"  Generated charts: {FIGURES_DIR}")
+    print("====================================================")
 
 if __name__ == "__main__":
     main()

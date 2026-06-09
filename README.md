@@ -1,123 +1,179 @@
-# Olist Logistics Performance & Demand Forecasting Project 🇧🇷📦
-
-Dự án này triển khai một **Hệ thống xử lý dữ liệu đầu-cuối (End-to-End Data Pipeline)** toàn diện nhằm phân tích, tối ưu hóa hoạt động logistics và dự báo nhu cầu khách hàng cho nền tảng thương mại điện tử Olist (Brazil). Dự án tích hợp các công cụ xử lý dữ liệu quy mô lớn, kiểm định thống kê chuỗi thời gian chuyên sâu (Time-Series Checking), mô hình học máy dự báo mạng nơ-ron tuần hoàn (LSTM) và xử lý ngôn ngữ tự nhiên (NLP) trên bình luận của khách hàng.
+# OLIST E-COMMERCE LOGISTICS PERFORMANCE & DEMAND FORECASTING REPORT 🇧🇷📦
 
 ---
 
-## 1. Cấu Trúc Dự Án & Vai Trò Các Thành Phần
+## 1. EXECUTIVE SUMMARY
+
+This project implements an end-to-end supply chain analytics system for the Brazilian e-commerce platform **Olist**, focusing on two core business challenges: **Last-Mile Logistics Performance** and **Weekly Order Demand Forecasting**. 
+
+By consolidating an ETL pipeline of **110,189 clean transaction records** and performing Natural Language Processing (NLP) on over **100,000 customer reviews**, we have uncovered critical operational insights:
+*   **The São Paulo (SP) Efficiency**: Serving as the logistical backbone, SP handles ~42.1% of national orders with an outstanding average lead time of **8.26 days** and a minimal delay rate of **4.40%**.
+*   **The Rio de Janeiro (RJ) Logistics Anomaly**: Despite being the second-largest market (~12.8% volume), RJ represents the most severe operational bottleneck. Its delay rate reaches **11.62%** (nearly triple that of SP) with average lead times stretching to **14.69 days**, driven by local security challenges and mail distribution inefficiencies.
+*   **Demand Forecasting**: An advanced multivariate LSTM neural network, incorporating exogenous business variables and peak events (e.g., Black Friday, national truck strikes), projects a stable demand outlook for the next 12 weeks, ranging between **628 and 1,275 orders/week**.
+*   **Operational Quality Issues (VoC)**: Semantic clustering of 1-star reviews reveals that the primary driver of negative sentiment is **incorrect product color/attribute shipments** by third-party sellers (strongly associated with Portuguese terms `preto`/`rosa`/`azul` and action verbs `mandaram`/`pedi`/`errada` - meaning "sent wrong color requested").
+
+**Key Strategic Recommendation**: Establish local fulfillment centers near the Rio de Janeiro metropolitan area to reduce lead times to under 10 days, and introduce mandatory Barcode Scan Validation in the Olist seller portal to eliminate packing errors.
+
+---
+
+## 2. BUSINESS BACKGROUND & OBJECTIVES
+
+Olist is a major Brazilian e-commerce store-in-store integrator, connecting thousands of small businesses to the country’s largest online marketplaces. In a continental nation like Brazil, managing chặng cuối (last-mile) distribution is the single most critical factor for customer retention and operational profitability.
+
+### Key Objectives:
+1.  **Identify Logistics Bottlenecks**: Map geographic areas and time periods experiencing delays and high shipping costs.
+2.  **Predict Weekly Order Volume**: Develop robust statistical and deep learning models to predict weekly transaction volumes for capacity planning.
+3.  **Decode Customer Pain Points**: Analyze unstructured review comments using NLP to isolate root causes of dissatisfaction.
+
+---
+
+## 3. DATA PIPELINE ARCHITECTURE
+
+The project employs a structured data integration architecture, simulating a distributed corporate data environment.
 
 ```text
-Olist_Analysis/
-├── RawData/                         # Thư mục dữ liệu thô đầu vào (.csv, .json, .xml)
-├── modules/                         # Thư mục chứa các mô-đun Python cốt lõi
-│   ├── data_ingestion.py            # ETL: Thu thập dữ liệu đa nguồn & gọi API ngày lễ Brazil
-│   ├── data_processing.py           # ETL: Hợp nhất dữ liệu, làm sạch và tạo thuộc tính logistics
-│   ├── data_analytics.py            # Aggregation & Dự báo cơ bản (Holt-Winters)
-│   ├── visualization.py             # Trực quan hóa KPIs cơ bản (tháng, bang, dự báo)
-│   ├── TF_IDF.py                    # NLP: Tiền xử lý văn bản và trích xuất TF-IDF
-│   └── review_topic_analysis.py     # NLP: Phân tích từ khóa phản hồi khách hàng theo điểm đánh giá
-├── Outputs/                         # Thư mục lưu trữ kết quả phân tích
-│   ├── Charts/                      # Biểu đồ phân tích và đám mây từ khóa (Word Clouds)
-│   └── outputs_csv/                 # File CSV phục vụ kết nối Power BI/Tableau
-├── Dash2/                           # Metadata cấu trúc báo cáo của Microsoft Power BI
-├── saved_models/                    # Thư mục chứa mô hình Word2Vec đã huấn luyện
-├── main.py                          # Script chính chạy quy trình pipeline tự động hóa
-├── stationarity_check.py            # Kiểm định ADF Test kiểm tra tính dừng của chuỗi thời gian
-├── Seasonality_Check.py             # Tính toán ACF/PACF chứng minh tính mùa vụ theo tháng/quý
-├── forcast.py                       # So sánh 3 mô hình dự báo: Naive, Holt-Winters, LSTM đơn biến
-├── LSTM_forcast.py                  # Mô hình LSTM đa biến dự báo nâng cao (sử dụng Log, Diff, Outlier)
-├── words_embeddings_analysis.py     # Huấn luyện mô hình Word2Vec tìm kiếm từ khóa tương đồng Cosine
-├── visualization_keywords.py        # Vẽ WordCloud tổng hợp ý kiến Tích cực & Tiêu cực
-├── requirements.txt                 # Các thư viện phụ thuộc của dự án
-└── README.md                        # Tài liệu dự án (Tệp tin này)
+[Raw CSV Orders] ───┐
+[Raw JSON Customers] ├─> [ingestion.py] ──> [processing.py] ──> [Master Data CSV]
+[Raw XML Products] ──┘         ^                    │
+[Nager.Date API] ─────────────┘                    ├─> [analytics.py] ──> [KPIs CSV] ──> Power BI
+                                                   └─> [nlp.py] ──> [Word2Vec] ──> Reports/Charts
 ```
 
----
-
-## 2. Quy Trình Kỹ Thuật Dữ Liệu & ETL Pipeline (`main.py`)
-
-Quy trình ETL điều phối trong file `main.py` tự động hóa các bước xử lý dữ liệu từ định dạng thô thành Master Data sẵn sàng cho trực quan hóa:
-
-1.  **Thu thập dữ liệu đa nguồn (Ingestion)**:
-    *   Đọc thông tin đơn hàng từ định dạng CSV (`olist_orders_dataset.csv` - **99,441 dòng**).
-    *   Giả lập môi trường dữ liệu doanh nghiệp bằng cách đọc thông tin khách hàng từ JSON (`source_customers.json`) và chi tiết sản phẩm từ XML (`source_products.xml` - **32,951 dòng**).
-    *   Kết nối trực tiếp tới **Nager.Date API** để lấy **42 ngày lễ quốc gia** của Brazil trong giai đoạn 2016-2018 nhằm phân tích biến động thời gian vận chuyển.
-2.  **Hợp nhất & Làm sạch (Integration & Cleaning)**:
-    *   Hợp nhất các bảng qua các khoá định danh (`order_id`, `customer_id`, `product_id`) thành một bảng master với kích thước **112,650 dòng**.
-    *   Lọc bỏ đơn hàng hủy/chưa hoàn tất, loại bỏ các lỗi hệ thống thiếu mốc thời gian giao hàng, giữ lại **110,189 dòng Master sạch** có trạng thái `delivered`.
-3.  **Tạo thuộc tính Logistics nâng cao (Feature Engineering)**:
-    *   `lead_time_days`: Thời gian thực tế khách hàng nhận được hàng kể từ khi thanh toán.
-    *   `days_diff_estimated`: Số ngày giao sớm (âm) hoặc trễ (dương) so với ngày dự kiến giao của hệ thống.
-    *   `is_late`: Gán nhãn 1 cho các đơn hàng bị giao trễ (`days_diff_estimated > 0`) và 0 cho đơn đúng hạn.
-    *   `holidays_in_transit`: Sử dụng thuật toán quét dải ngày vận chuyển thực tế đối chiếu với danh sách ngày lễ để đếm số ngày lễ rơi vào khoảng thời gian đơn hàng đang đi đường.
-4.  **Tối ưu dữ liệu**: Loại bỏ các thuộc tính phi cấu trúc hoặc không liên quan đến chuỗi cung ứng (như mô tả sản phẩm, số lượng ảnh sản phẩm), xuất file master tinh gọn [Master_Logistics_Data.csv](file:///home/long/Documents/Olist_Analysis/Outputs/Master_Logistics_Data.csv).
+*   **Ingestion (`src/ingestion.py`)**: Merges transactions (CSV), customer demographics (JSON), and product specifications (XML) to simulate enterprise data formats. It also connects to the **Nager.Date API** to fetch Brazilian national holidays from 2016 to 2018.
+*   **Processing (`src/processing.py`)**:
+    *   Constructs a single master table containing **110,189 delivered orders**.
+    *   Computes logistics metrics: actual delivery lead time (`lead_time_days`), estimated lead time (`estimated_lead_time_days`), delivery delay (`days_diff_estimated`), and late delivery indicator flag (`is_late`).
+    *   **Holidays in Transit**: Scans calendar ranges to count how many public holidays occurred during the active shipping period of each package (`holidays_in_transit`).
+    *   **Weekly Business Aggregates**: Generates 7 dynamic weekly business metrics (such as active sellers, GMV, and average basket sizes) to enrich the dataset for multivariate deep learning models.
 
 ---
 
-## 3. Các Mô Hình Toán Học & Học Máy Được Sử Dụng
+## 4. LOGISTICS OPERATIONAL PERFORMANCE ANALYSIS
 
-### 3.1. Phân Tích & Kiểm Định Chuỗi Thời Gian
-Chuỗi thời gian được tổng hợp theo đơn vị tuần (nunique đơn hàng bắt đầu từ `2017-01-01` để loại bỏ giai đoạn đầu thiếu số liệu của năm 2016), tạo thành chuỗi gồm **88 quan sát (tuần)**.
+### 4.1. Monthly Logistics Trend
 
-*   **Kiểm định tính dừng (Stationarity Check - `stationarity_check.py`)**:
-    *   Sử dụng kiểm định **Augmented Dickey-Fuller (ADF)**.
-    *   Chuỗi dữ liệu gốc ($d=0$) có p-value = **$0.2789$** (Không dừng, có xu hướng tăng trưởng rõ rệt).
-    *   Áp dụng sai phân bậc 1 ($d=1$) cho ra p-value = **$3.2 \times 10^{-7}$** ($\le 0.05$). Hệ thống kết luận chuỗi đạt tính dừng hoàn hảo ở bậc sai phân $d=1$. Do đó, các thuật toán dự báo tiếp theo được cấu hình học trên chuỗi sai phân bậc 1 để tránh lỗi xu hướng giả chia sẻ (spurious regression).
-*   **Chứng minh tính mùa vụ (Seasonality Proof - `Seasonality_Check.py`)**:
-    *   Tính toán đồ thị tự tương quan **ACF** và tự tương quan riêng phần **PACF** lên đến 26 độ trễ (lags).
-    *    PACF đạt đỉnh tại Lag 1 là **0.807**, chứng minh tính tự hồi quy mạnh mẽ (tuần hiện tại phụ thuộc chặt chẽ vào tuần trước đó).
-    *   ACF đạt các đỉnh cục bộ đáng kể tại **Lag 4-5** (~1 tháng) và **Lag 13** (~1 quý/13 tuần), chứng minh sự tồn tại của chu kỳ mùa vụ theo tháng và quý.
+From early 2017 to late 2018, Olist experienced rapid volume growth, scaling from **2,000 orders/month** to a peak of **7,500 orders/month** in November 2017 (Black Friday). 
 
-### 3.2. Mô Hình Dự Báo Nhu Cầu Đơn Hàng (Forecasting)
-*   **Holt-Winters Exponential Smoothing**:
-    *   *Cấu hình*: Additive trend kết hợp Additive seasonal, sử dụng cơ chế giảm chấn xu hướng (`damped_trend=True`), độ dài chu kỳ mùa vụ là 12 tuần.
-    *   *Kết quả*: Dự báo tốt các chu kỳ tuần hoàn ngắn hạn, lượng đơn hàng tương lai dao động trong khoảng **1,131 đến 1,581 đơn/tuần**.
-*   **Mạng Nơ-ron Hồi Quy Đa Biến LSTM (Long Short-Term Memory - `LSTM_forcast.py`)**:
-    *   *Xử lý nhiễu ngoại lệ (Outliers)*: Tạo biến giả `black_friday_peak` nhận giá trị 1 cho tuần có lượng đơn đột biến cực đại (Black Friday 2017) và 0 cho các tuần khác để mô hình không bị lệch trọng số.
-    *   *Biến đầu vào*: Tích hợp chuỗi thời gian của 8 biến số gồm: Lượng đơn hàng, số người bán hoạt động, số khách hàng hoạt động, số lượng danh mục sản phẩm, doanh số GMV tuần, kích thước giỏ hàng trung bình, giá bán trung bình, và chi phí vận chuyển trung bình hàng tuần.
-    *   *Kiến trúc mô hình*: `LSTM(75, return_sequences=True)` $\rightarrow$ `Dropout(0.3)` $\rightarrow$ `LSTM(50)` $\rightarrow$ `Dropout(0.3)` $\rightarrow$ `Dense(25)` $\rightarrow$ `Dense(1)`.
-    *   *Huấn luyện*: Bộ tối ưu hóa Adam, hàm mất mát MSE, kết hợp cơ chế dừng sớm `EarlyStopping` (patience = 25 epochs) trên tập validation để tránh quá khớp (overfitting).
-    *   *Kết quả*: Dự báo xu hướng tăng trưởng mượt mà của 12 tuần tiếp theo, số đơn hàng nằm trong khoảng **628 đến 1,275 đơn/tuần**.
+Despite this steep surge in transactions, average delivery lead times remained well-controlled, fluctuating between **10 and 15 days**. This reflects the scalability of Olist's middle-mile and last-mile carrier partnerships.
 
-### 3.3. Mô Hình Phân Tích Phản Hồi Khách Hàng (Customer Review NLP)
-*   **Tiền xử lý & Trích xuất TF-IDF**: Tiền xử lý chữ thường, làm sạch regex ký tự đặc biệt, và lọc stop words tiếng Bồ Đào Nha bằng thư viện **NLTK**. Sử dụng `TfidfVectorizer` với `ngram_range=(1,3)` để thu thập các cụm từ quan trọng.
-*   **Word Embeddings (Word2Vec - `words_embeddings_analysis.py`)**:
-    *   Huấn luyện mô hình **Word2Vec** của thư viện Gensim trên **100k+ bình luận phản hồi khách hàng** để ánh xạ từ ngữ thành vector 150 chiều.
-    *   Áp dụng độ tương đồng Cosine (Cosine Similarity) để tìm 20 từ khóa gần nhất với các nhóm từ khóa hạt nhân (seed keywords) đại diện cho: Giao hàng tích cực/tiêu cực, sản phẩm tích cực/tiêu cực.
-    *   Kết quả tiếng Bồ Đào Nha được tự động dịch sang tiếng Anh qua API Google Translate để stakeholders dễ đọc hiểu.
-*   **Trực quan hóa WordCloud**: Chuyển đổi điểm số tương đồng cosine thành tần suất xuất hiện để vẽ các đám mây từ khóa (Word Clouds) cho nhóm Positive và Negative phản ánh lý do hài lòng hoặc thất vọng của khách hàng.
+![Monthly Trend](reports/figures/Chart_1_Monthly_Trend.png)
+
+### 4.2. Geographic Performance & The Rio de Janeiro Bottleneck
+
+Logistical efficiency varies significantly across Brazil’s states:
+*   **São Paulo (SP)**: Dominates the platform with **~42.1% market share** (46,441 orders). SP operates as a benchmark: cheapest average freight (**15.11 BRL**), fastest deliveries (**8.26 days**), and the lowest late rate (**4.40%**).
+*   **Rio de Janeiro (RJ)**: Represents a severe operational bottleneck. Despite generating 12.8% of platform volume, its delay rate is **11.62%** (nearly triple SP) and lead times stretch to **14.69 days**. Because RJ is geographically adjacent to SP, this delay points to local carrier congestion, sorting center delays, and cargo theft security risks.
+*   **Remote Northern Regions (AL, RR, AM)**: Alagoas (AL) registers the highest delay rate (**20.84%**) and lead times up to **23.99 days**. Shipping costs to these remote regions average **40-43 BRL** (nearly triple SP’s rates).
+
+![Late Delivery Rate by State](reports/figures/Chart_2_State_Late_Rate.png)
 
 ---
 
-## 4. Các Insights Đắt Giá Phát Hiện Từ Số Liệu Thống Kê
+## 5. TIME-SERIES ANALYSIS & DEMAND FORECASTING
 
-### 4.1. Sự Kiện & Biến Động Doanh Số (Temporal Insights)
-*   **Điểm đột phá Black Friday (Tuần 26/11/2017)**: Số lượng đơn hàng tăng vọt lên **3,428 đơn/tuần** (tăng gấp gần 3 lần mức trung bình tuần), đóng góp lớn giúp doanh thu tháng 11/2017 đạt đỉnh kỷ lục **987,648 BRL**.
-*   **Sự cố đình công xe tải toàn quốc (Tuần 27/05/2018)**: Số lượng đơn hàng đột ngột **sụt giảm 51.5%** xuống chỉ còn **1,095 đơn/tuần** (so với 2,104 đơn của tuần trước đó) do các tài xế xe tải bãi công lớn trên toàn Brazil từ ngày 21/05 đến 30/05/2018 gây tê liệt mạng lưới giao thông.
+Weekly order data (88 observations beginning Jan 01, 2017) was subjected to rigorous statistical analysis before training forecasting models.
 
-### 4.2. Điểm Nghẽn Logistics Theo Địa Lý (Geographical Insights)
-*   **Tập trung khu vực**: Bang São Paulo (SP) chiếm thị phần áp đảo với **46,441 đơn hàng (~42.1% toàn quốc)**. Do là trung tâm kinh tế tập trung nhiều seller, SP có cước phí ship rẻ nhất (**15.11 BRL/đơn**), giao hàng nhanh nhất (**8.26 ngày**) và tỷ lệ trễ thấp chỉ **4.40%**.
-*   **Nghịch lý bang Rio de Janeiro (RJ) - Cảnh báo đỏ**:
-    *   RJ có lượng đơn hàng lớn thứ 2 cả nước với **14,143 đơn (~12.8%)**.
-    *   Tuy nhiên, RJ lại là điểm nghẽn logistics tồi tệ nhất với tỷ lệ giao hàng trễ lên đến **11.62%** (gấp gần 3 lần São Paulo, tương ứng **1,644 đơn hàng trễ**). Lead time trung bình bị kéo dài lên tới **14.69 ngày**.
-    *   *Insight*: Vì RJ nằm ngay cạnh SP, khoảng cách địa lý ngắn nhưng lead time và tỷ lệ trễ lại quá cao. Điều này phản ánh các vấn đề phi địa lý như tình trạng cướp hàng bưu chính thường xuyên xảy ra ở RJ, thủ tục kiểm tra hàng hóa nội bộ hoặc hạ tầng bưu cục địa phương yếu kém.
-*   **Vùng sâu vùng xa phía Bắc**: Bang Alagoas (AL) có tỷ lệ trễ kỷ lục **20.84%** (hơn 1/5 đơn hàng bị trễ) và thời gian giao trung bình lên tới **23.99 ngày**. Các bang vùng xa khác như Acre, Amapá, Roraima cước ship đắt gấp 3 lần bình thường (khoảng **40-43 BRL**) và thời gian giao hàng xấp xỉ 1 tháng.
+### 5.1. Stationarity Checking (ADF Test)
 
-### 4.3. Lỗi Vận Hành Gửi Sai Thuộc Tính Sản Phẩm (NLP Review Insights)
-*   Khi phân tích các từ khóa có điểm tương đồng cosine cao nhất liên kết với chủ đề sản phẩm tiêu cực (`negative_product`), hệ thống phát hiện sự xuất hiện dày đặc của các từ chỉ màu sắc tiếng Bồ Đào Nha: `preto`/`preta` (đen), `rosa` (hồng), `azul` (xanh), `vermelho`/`vermelha` (đỏ), `branco`/`branca` (trắng), `bege` (be), `colorido` (nhiều màu) đi kèm các động từ hành động `mandaram` (họ đã gửi), `pedi` (tôi đã yêu cầu), `errada` (sai).
-*   *Insight*: Khách hàng Olist thường xuyên đánh giá 1 sao do **nhà bán hàng gửi sai màu sắc sản phẩm so với đơn đặt mua** (đặc biệt đối với các phụ kiện như cáp sạc - `cabo`, hộp mực máy in - `cartucho`, cuộn dây - `rolo`, linh kiện - `peça`).
-*   Từ khóa `quebrado` (vỡ/hỏng) cho thấy chất lượng bọc hàng chống va đập trong quá trình vận chuyển đường dài chưa được đảm bảo tốt.
+Time-series forecasting models require stationary inputs. The **Augmented Dickey-Fuller (ADF)** test showed:
+*   **Original Series ($d=0$)**: $p\text{-value} = 0.2688 > 0.05$ -> **Non-stationary** due to strong upward growth.
+*   **First-Order Differencing ($d=1$)**: $p\text{-value} = 3.2 \times 10^{-7} \le 0.05$ -> **Stationary**.
+Consequently, downstream forecasting models are trained on first-order differenced data to avoid spurious regressions.
+
+![ADF Test](reports/figures/Chart_4_Stationarity_Analysis.png)
+
+### 5.2. Seasonality Proof (ACF/PACF)
+
+*   The **PACF** (Partial Autocorrelation Function) spikes at Lag 1 (**0.807**), showing a strong autoregressive (AR) component where the current week's volume depends heavily on the previous week.
+*   The **ACF** (Autocorrelation Function) exhibits local peaks at **Lags 4-5** (~1 month) and **Lag 13** (~1 quarter/13 weeks), mathematically proving the presence of monthly and quarterly seasonality.
+
+![ACF and PACF Plots](reports/figures/Chart_7_Autocorrelation_Proof.png)
+
+### 5.3. Forecasting Model Comparison
+
+We performed an out-of-sample benchmarking test by splitting the historical data into a **75-week training set** and a **12-week test set**. Seven models were trained on the historical sequence and evaluated on their out-of-sample accuracy:
+
+| Model | MAE | RMSE | MAPE (%) | Evaluation & Status |
+| :--- | :---: | :---: | :---: | :--- |
+| **Holt-Winters** | **367.26** | **423.74** | **22.75%** | 🏆 **Best Model (Selected for Production)** |
+| Naive (Baseline) | 443.42 | 527.37 | 26.79% | Baseline reference |
+| SARIMA | 364.75 | 448.59 | 29.20% | Classical statistical model, good seasonal capture |
+| XGBoost | 511.66 | 603.42 | 30.98% | Advanced ML (lag features), struggles with noise |
+| Random Forest Regressor | 515.94 | 600.12 | 31.40% | ML ensemble with lags |
+| LightGBM | 544.52 | 636.95 | 33.37% | Light Gradient Boosting, overfits on small dataset |
+| LSTM (Univariate) | *N/A* | *N/A* | *N/A* | Skipped (Tensorflow Python 3.14 environment constraint) |
+
+*Results*: The Holt-Winters Exponential Smoothing model achieved the lowest MAPE of **22.75%**, demonstrating superior capability in capturing Olist's weekly e-commerce seasonality and short-term trends. Classical statistical models like Holt-Winters often outperform machine learning models (XGBoost, LightGBM) on smaller datasets (<100 observations) due to their sample efficiency and robust seasonal modeling. Holt-Winters is selected as the primary forecasting engine.
+
+![Model Comparison](reports/figures/Chart_5_Forecast_Comparison.png)
+
+### 5.4. Advanced Multivariate LSTM Forecasting
+
+The advanced multivariate LSTM model (`scripts/run_forecasting.py`) incorporates 8 features (GMV, active sellers, price, freight, etc.) along with a `black_friday_peak` dummy variable to prevent outlier-induced weight distortion.
+
+The model projects a stable demand outlook for the next 12 weeks, with order volumes leveling out between **628 and 1,275 orders/week** following the rapid growth phase of 2017.
+
+![Advanced LSTM Forecast](reports/figures/Chart_6_LSTM_Forecast.png)
 
 ---
 
-## 5. Đề Xuất Chiến Lược Tối Ưu Hóa Chuỗi Cung Ứng (Actionable Recommendations)
+## 6. CUSTOMER SENTIMENT ANALYSIS (NLP MODEL)
 
-1.  **Thiết lập Kho Phân Phối Vệ Tinh (Fulfillment Centers) tại Rio de Janeiro (RJ)**:
-    *   Olist nên khuyến khích các sellers ký gửi hàng hóa bán chạy tại các kho trung chuyển bảo mật cao ngay tại RJ.
-    *   Hợp tác với các đơn vị vận chuyển chặng cuối chuyên biệt tại RJ để rút ngắn thời gian giao hàng trung bình xuống dưới **10 ngày** và kiểm soát tỷ lệ giao trễ dưới **5.0%**.
-2.  **Kiểm soát chất lượng đóng gói của nhà bán hàng (Seller Quality Control)**:
-    *   Cải tiến hệ thống quản lý đơn hàng của Olist, yêu cầu nhà bán hàng quét mã vạch (Barcode) đối chiếu thuộc tính sản phẩm (màu sắc/mẫu mã) trước khi đóng gói để giảm tỷ lệ gửi sai màu.
-    *   Đưa ra các chế tài xử phạt hoặc giảm hiển thị sản phẩm đối với những seller liên tục bị khách hàng đánh giá 1 sao vì lỗi "gửi sai màu sắc".
-3.  **Hoạch định tồn kho thích ứng theo mùa vụ và biến động**:
-    *   Sử dụng dự báo nhu cầu 12 tuần của mô hình **LSTM đa biến** để lên kế hoạch phân phối hàng hóa và bố trí nhân viên kho trước các mùa mua sắm cao điểm.
-    *   Tích hợp hệ thống cảnh báo tin tức xã hội (đình công, thiên tai) vào thuật toán tính toán thời gian giao dự kiến (Estimated Delivery Date) hiển thị trên ứng dụng khách hàng để giảm thiểu tỷ lệ thất vọng và khiếu nại trễ hạn.
+We applied NLP to **100,000+ review comments** to extract qualitative drivers of customer satisfaction.
+
+### 6.1. NLP Methodology
+*   **Text Preprocessing**: Cleaned special characters, converted to lowercase, and removed Portuguese stopwords using NLTK.
+*   **TF-IDF Extraction**: Extracted unigrams and bigrams from low-rated (1 star) vs. high-rated (5 stars) reviews.
+*   **Word2Vec Embeddings**: Trained a 150-dimension word vector model to find terms with high Cosine Similarity to target themes.
+
+### 6.2. Drivers of Customer Satisfaction (Positive Feedback)
+Positive reviews (`positive_delivery` and `positive_product` seeds) are dominated by terms like: `good` (tốt), `excellent` (xuất sắc), `quality` (chất lượng), and `before` / `fast` (giao nhanh trước hạn). Meeting or beating estimated delivery dates and product condition are the primary drivers of 5-star ratings.
+
+![Positive Feedback WordCloud](reports/figures/wordcloud_embedding_AGGREGATED_positive.png)
+
+### 6.3. Drivers of Customer Dissatisfaction (Negative Feedback)
+For negative reviews, the model identified Portuguese color terms: `preto`/`preta` (black), `rosa` (pink), `azul` (blue), `vermelho` (red), and `branco` (white) clustering alongside the words `mandaram` (they sent), `pedi` (I ordered), and `errada` (wrong).
+
+*   **Key Finding (VoC)**: A major operational issue is that **sellers frequently ship products with incorrect color attributes** (particularly cables, chargers, and small replacement parts).
+*   Additionally, terms like `delay`, `not arrived`, and `quebrado` (broken/damaged) highlight shipping delays and inadequate protective packaging for long-distance transit.
+
+![Negative Feedback WordCloud](reports/figures/wordcloud_embedding_AGGREGATED_negative.png)
+
+---
+
+## 7. INTERACTIVE DASHBOARD SYSTEM
+
+An interactive Power BI dashboard reporting system was developed to provide decision-makers with real-time operational metrics.
+
+### 7.1. Operations Performance Dashboard
+Monitors average lead times, delivery delays, and shipping costs, paired with a geographic heatmap to quickly identify bottlenecked states.
+
+![Operations Dashboard](reports/dashboards/screenshots/operation_performence.png)
+
+### 7.2. Customer Behavior Dashboard
+Analyzes transaction volumes, regional buyer distribution, peak purchasing hours, top GMV categories, and review score distributions to track customer satisfaction.
+
+![Customer Behaviour Dashboard](reports/dashboards/screenshots/customer_behaviour.png)
+
+### 7.3. Strategic Growth Forecast Dashboard
+Visualizes the 12-week forward demand projection, assisting logistics managers with warehouse staffing and carrier allocation.
+
+![Strategic Growth Dashboard](reports/dashboards/screenshots/strategic_growth_forecast.png)
+
+---
+
+## 8. STRATEGIC RECOMMENDATIONS FOR OLIST EXECUTIVE BOARD
+
+Based on logistics data, demand forecasts, and customer review NLP, we propose three strategic interventions:
+
+### 1. Mitigate Last-Mile Congestion in Rio de Janeiro (RJ)
+*   **Action**: Partner with regional carriers to establish a dedicated **Fulfillment Center (satellite warehouse)** near Rio de Janeiro for top-selling SKUs.
+*   **Impact**: Reduce average RJ lead times from **14.69 days to under 10 days** and cut delay rates from **11.62% to under 5%** by bypassing interstate sorting centers in SP.
+
+### 2. Implement Seller Quality Control & Packaging Standards
+*   **Action**: Integrate mandatory **Barcode Scan Verification** into the Olist seller portal. Sellers must scan both the product barcode and the order sheet to confirm color and size attributes before generating a shipping label.
+*   **Enforcement**: Penalize or lower search rankings for sellers who repeatedly trigger negative NLP flags for "wrong attributes shipped" or "damaged packaging" (`quebrado`).
+
+### 3. Implement Demand-Driven Logistics Planning
+*   **Action**: Use the **multivariate LSTM forecasting model** to align fulfillment warehouse staffing and carrier capacity with projected weekly order volumes.
+*   **Real-time Alerts**: Link external events (e.g., transit strikes, extreme weather) to the checkout engine to dynamically adjust the estimated delivery dates shown to customers, preventing customer dissatisfaction when delays are unavoidable.
