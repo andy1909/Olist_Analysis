@@ -1,7 +1,9 @@
 # main.py
 import os
 import pandas as pd
-from src import ingestion, processing, analytics, visualization
+from src.data import ingestion, processing
+from src.models import analytics
+from src.utils import visualization
 
 # Path configurations
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -94,11 +96,11 @@ def main():
     print(f"    - Saved state KPIs to: {kpi_state_path}")
     print(f"    - Saved monthly KPIs to: {kpi_month_path}")
 
-    # 3.2 Run Baseline forecasting (Holt-Winters weekly demand prediction)
-    forecast_df = analytics.forecast_orders(master_df, periods=12)
+    # 3.2 Run Selected Hybrid Forecasting (Holt-Winters + XGBoost Residuals)
+    forecast_df = analytics.forecast_orders_hybrid(master_df, periods=12)
     forecast_csv_path = os.path.join(PROCESSED_DATA_DIR, 'Forecast_Results.csv')
     forecast_df.to_csv(forecast_csv_path, index=False)
-    print(f"    - Saved forecast timeline to: {forecast_csv_path}")
+    print(f"    - Saved hybrid forecast timeline to: {forecast_csv_path}")
 
     # -------------------------------------------------------------------------
     # STEP 4: VISUALIZATION PLOTS GENERATION

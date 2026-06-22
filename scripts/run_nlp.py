@@ -1,9 +1,14 @@
 # scripts/run_nlp.py
 import os
+import sys
 import time
 import pandas as pd
 import warnings
 import multiprocessing
+
+# Add parent directory to path to enable importing from src when run directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 try:
     from gensim.models import Word2Vec
     HAS_GENSIM = True
@@ -20,7 +25,7 @@ except Exception:
                     self.text = t
             return Translation(text)
 
-from src.nlp import preprocess_text, create_wordcloud
+from src.models.nlp import preprocess_text, create_wordcloud
 
 warnings.filterwarnings("ignore")
 

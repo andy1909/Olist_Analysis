@@ -39,3 +39,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.swp
+
+# Project logs
+logs/
+*.log
+

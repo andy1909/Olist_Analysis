@@ -10,8 +10,8 @@ This report showcases data-driven decision-making, statistical time-series forec
 
 This project implements analytical solutions using the Olist e-commerce dataset (comprising 73 weeks of clean transaction data ending May 20, 2018) to optimize supply chain performance:
 *   **Demand Forecasting**: Developed a **Lag-3 Constrained Hybrid Residual Forecasting system** (Holt-Winters baseline + XGBoost residuals) that achieves an out-of-sample Mean Absolute Percentage Error (MAPE) of **5.45%**, providing highly accurate weekly order projections.
-*   **Logistics Bottlenecks & Invoicing Skew**: Identified Rio de Janeiro (RJ) as a major logistics bottleneck (average lead time of **14.69 days** and a **11.62% late delivery rate** vs. São Paulo's stable 8.26 days lead time and 4.40% late rate). Analyzed how these delivery delays block Bill of Lading (BL) linking, skewing invoicing phasing towards the end of the month and delaying revenue recognition.
-*   **Strategic Recommendations**: Proposed a transition from DAP to CPT/FCA commercial terms (Incoterms) and a localized regional 3PL warehouse to accelerate invoicing and pull revenue recognition forward by **6 to 12 days**.
+*   **Logistics Bottlenecks & Invoicing Skew**: Identified Rio de Janeiro (RJ) as a major logistics bottleneck (average lead time of **14.69 days** and a **11.62% late delivery rate** vs. São Paulo's stable 8.26 days lead time and 4.40% late rate). Analyzed how these delivery delays would block Bill of Lading (BL) linking, skewing invoicing phasing towards the end of the month and delaying revenue recognition (modeled via simulated B2B proxies).
+*   **Strategic Recommendations**: Proposed a transition from DAP to CPT/FCA commercial terms (Incoterms) and a localized regional 3PL warehouse to accelerate invoicing and pull revenue recognition forward by **6 to 12 days** (modeled B2B simulation).
 
 ---
 
@@ -24,7 +24,7 @@ In the initial Exploratory Data Analysis (EDA) of the Olist order database, we a
 
 ![Monthly Sales Trend](reports/figures/Chart_1_Monthly_Trend.png)
 
-As shown in the chart above (generated in our [Jupyter Notebook](file:///home/long/Documents/Olist_Analysis/notebook/1.%20EDA%20OLIST%20ECOMMERCE.ipynb#L167-L185)), Olist experienced an upward growth trend from 2016 through 2018. This long-term non-stationary behavior made it mathematically necessary to run stationarity tests and perform differencing to prevent models from learning spurious growth trends.
+As shown in the chart above (generated in our [Jupyter Notebook](file:///home/long/Documents/Olist_Analysis/notebooks/1.%20EDA%20OLIST%20ECOMMERCE.ipynb#L167-L185)), Olist experienced an upward growth trend from 2016 through 2018. This long-term non-stationary behavior made it mathematically necessary to run stationarity tests and perform differencing to prevent models from learning spurious growth trends.
 
 #### 2.1.2. Time Series Diagnostics & Seasonality Proof (From Notebook Section 5)
 Following our EDA trend visualization, we ran detailed time-series diagnostics:
@@ -134,11 +134,16 @@ The negative word cloud reveals critical operational failure modes in both trans
 *   **The Warehouse Attribute Picking Cluster**: An extremely significant and unique cluster consists of specific product colors: **"black"**, **"pink"**, **"blue"**, **"red"**, **"white"**, and **"beige"** alongside the words **"wrong"**, **"sent different"**, and **"requested"**. This reveals a systemic picking error in the SP fulfillment center. When packing items, warehouse staff frequently ship the wrong color variant of a product (e.g., shipping a pink case instead of the requested black one). This requires immediate system controls, such as barcode verification at the packing dock.
 *   **The Product Category & Protection Cluster**: Words like **"cartridge"**, **"printer"**, **"cables"**, and **"broken"** point to specific fragile electronics accessories that suffer high damage rates in transit. This indicates that these specific SKUs require customized, double-walled protective packaging to prevent transit damage.
 
-### 3.3. Bill of Lading (BL) Linking & Revenue Realization (Invoicing Phasing Analysis)
+### 3.3. Bill of Lading (BL) Linking & Revenue Realization (Invoicing Phasing Analysis - Simulated Case Study)
+> [!NOTE]
+> The raw Olist dataset does not contain B2B financial variables (such as Bill of Lading dates, Days Sales Outstanding, or invoice dates). To demonstrate enterprise supply chain finance concepts, this section implements a **simulated business model** mapping the actual logistics performance (delivery confirmation and transit delays) to proxy document workflows.
+> 
+> Specifically, order delivery confirmation is used as a proxy for Proof of Delivery (POD) and subsequent Bill of Lading (BL) processing times.
+
 In global supply chain finance, revenue recognition is governed by the timing of invoice release. Under standard sales terms, an invoice can only be generated when the **Bill of Lading (BL)** is linked to the order, confirming receipt of goods (Proof of Delivery, or POD). Delivery delays directly impact this document workflow, creating cash lockups.
 
-#### 3.3.1. Quantitative Impact of Logistics Delays on Document Flows
-By correlating order transit times with subsequent invoicing dates in the Olist database, we quantified the document processing lags across major customer regions:
+#### 3.3.1. Modeled Impact of Logistics Delays on Document Flows
+By mapping order transit times to simulated invoicing dates (where delivery confirmations trigger subsequent document releases), we modeled the document processing lags across major customer regions:
 
 | Destination Region | Avg. Transit Lead Time (Days) | Avg. BL Linking Lag (Days) | Week 1 Invoicing (%) | Week 2 Invoicing (%) | Week 3 Invoicing (%) | Week 4 Invoicing (%) | Invoicing Profile / Skew Type |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
@@ -182,3 +187,58 @@ Monitors average lead times, delay rates, and shipping costs across states, allo
 Tracks order frequencies, transaction volumes, and customer satisfaction metrics to ensure delivery performance aligns with service levels.
 
 ![Customer Behavior Dashboard](reports/dashboards/screenshots/customer_behaviour.png)
+
+---
+
+## 6. Project Directory Structure
+
+Following enterprise-grade production design, the repository is structured modularly:
+
+```
+Olist_Analysis/
+├── config/
+│   └── config.json          # Centralized execution configuration
+├── data/
+│   ├── raw/                 # Raw datasets (CSV, JSON, XML) - Immutable
+│   └── processed/           # Processed datasets and forecasting outputs
+├── models/                  # Serialized model assets (Word2Vec)
+├── notebooks/               # Jupyter notebooks for EDA and experimentation
+│   └── 1. EDA OLIST ECOMMERCE.ipynb
+├── reports/
+│   ├── dashboards/          # Power BI dashboards and screenshots
+│   ├── figures/             # Diagnostic plots and visualizations
+│   └── presentation.pdf     # Slide deck presentation
+├── src/                     # Core codebase structured as python packages
+│   ├── data/                # Data loading and ingestion scripts
+│   │   ├── ingestion.py
+│   │   └── processing.py
+│   ├── models/              # Model training, forecasting and NLP analytics
+│   │   ├── analytics.py
+│   │   └── nlp.py
+│   └── utils/               # Supporting tools (logging, exceptions, config)
+│       ├── exception.py
+│       ├── logger.py
+│       ├── utils.py
+│       └── visualization.py
+├── scripts/                 # Entrypoint execution scripts
+│   ├── check_time_series.py # Stationarity and autocorrelation diagnostics
+│   ├── run_forecasting.py   # Demand forecasting algorithms (hybrid & baseline)
+│   └── run_nlp.py           # NLP review sentiment embedding extraction
+├── tests/                   # Automated unit tests package
+│   ├── test_analytics.py    # Test logic for KPI generation
+│   └── test_processing.py   # Test logic for data cleaning
+├── requirements.txt         # Package dependencies
+├── main.py                  # Main pipeline orchestrator
+└── README.md                # General project documentation
+```
+
+To run the pipeline and generate the outputs, run:
+```bash
+.venv/bin/python main.py
+```
+
+To run the automated tests:
+```bash
+.venv/bin/python -m unittest discover -s tests
+```
+

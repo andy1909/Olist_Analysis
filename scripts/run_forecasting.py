@@ -1,11 +1,15 @@
 # scripts/run_forecasting.py
 import os
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 from sklearn.preprocessing import MinMaxScaler
+
+# Add parent directory to path to enable importing from src when run directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import LSTM, Dense, Dropout

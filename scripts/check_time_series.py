@@ -1,5 +1,6 @@
 # scripts/check_time_series.py
 import os
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +8,9 @@ import seaborn as sns
 from statsmodels.tsa.stattools import adfuller, acf, pacf
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 import warnings
+
+# Add parent directory to path to enable importing from src when run directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Configuration
 warnings.filterwarnings("ignore")
