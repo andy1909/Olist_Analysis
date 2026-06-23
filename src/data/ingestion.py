@@ -44,7 +44,7 @@ def fetch_holidays_api(years=[2016, 2017, 2018]):
     for year in years:
         url = f"https://date.nager.at/api/v3/publicholidays/{year}/BR"
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=10)
             if response.status_code == 200:
                 all_holidays.extend(response.json())
                 print(f"    - Retrieved holidays for year {year}")

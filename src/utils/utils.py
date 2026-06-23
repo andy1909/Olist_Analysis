@@ -1,23 +1,26 @@
+"""Utility functions for the Olist Analysis pipeline."""
 import os
-import sys
-import pickle
-from src.utils.exception import CustomException
+import json
+import pandas as pd
 
-def save_object(file_path, obj):
-    try:
-        dir_path = os.path.dirname(file_path)
-        os.makedirs(dir_path, exist_ok=True)
 
-        with open(file_path, "wb") as file_obj:
-            pickle.dump(obj, file_obj)
+def ensure_dir(path):
+    """Create directory if it doesn't exist."""
+    os.makedirs(path, exist_ok=True)
+    return path
 
-    except Exception as e:
-        raise CustomException(e, sys)
 
-def load_object(file_path):
-    try:
-        with open(file_path, "rb") as file_obj:
-            return pickle.load(file_obj)
+def save_dataframe(df, path, format='csv'):
+    """Save a DataFrame to CSV or Excel."""
+    ensure_dir(os.path.dirname(path))
+    if format == 'excel':
+        df.to_excel(path, index=False, engine='openpyxl')
+    else:
+        df.to_csv(path, index=False)
+    print(f"    -> Saved: {path}")
 
-    except Exception as e:
-        raise CustomException(e, sys)
+
+def load_config(config_path):
+    """Load JSON configuration file."""
+    with open(config_path, 'r') as f:
+        return json.load(f)

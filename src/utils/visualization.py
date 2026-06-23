@@ -23,7 +23,7 @@ def plot_monthly_trend(kpi_month_path, output_dir):
     sns.barplot(data=df, x='order_month', y='total_orders', color='skyblue', alpha=0.6, ax=ax1)
     ax1.set_ylabel('Total Orders', color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
-    ax1.set_xticklabels(ax1.get_xticklabels(), rotation=45)
+    plt.xticks(rotation=45, ha='right')
 
     # Right Y axis: avg lead time
     ax2 = ax1.twinx()
@@ -56,7 +56,9 @@ def plot_state_performance(kpi_state_path, output_dir):
         data=df_top,
         x='customer_state',
         y='late_rate_percent',
-        palette='Reds'
+        hue='customer_state',
+        palette='Reds',
+        legend=False
     )
 
     for p in chart.patches:
@@ -69,6 +71,7 @@ def plot_state_performance(kpi_state_path, output_dir):
     plt.title('Top 10 States: Late Delivery Rate (%)', fontsize=16)
     plt.ylabel('Late Rate (%)')
     plt.xlabel('State')
+    plt.tight_layout()
 
     save_path = os.path.join(output_dir, 'Chart_2_State_Late_Rate.png')
     plt.savefig(save_path)
@@ -96,6 +99,7 @@ def plot_forecast(forecast_path, output_dir):
     plt.xlabel('Date')
     plt.ylabel('Weekly Orders')
     plt.legend()
+    plt.tight_layout()
 
     save_path = os.path.join(output_dir, 'Chart_3_Forecast.png')
     plt.savefig(save_path)

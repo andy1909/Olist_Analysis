@@ -133,7 +133,7 @@ def univariate_lstm_forecast(series, periods, n_steps=10, epochs=50):
 
     return final_forecast
 
-def create_lag_features(series, lags=[1, 2, 3, 4, 12, 13]):
+def create_lag_features(series, lags=[1, 2, 3]):
     df = pd.DataFrame(series)
     df.columns = ['y']
     for lag in lags:
@@ -573,7 +573,7 @@ def main():
     
     master_path = os.path.join(PROCESSED_DATA_DIR, 'Master_Logistics_Data.csv')
     if not os.path.exists(master_path):
-        print(f"LỖI: File không tồn tại {master_path}. Hãy chạy `main.py` trước.")
+        print(f"ERROR: File not found at {master_path}. Please run `main.py` first.")
         return
 
     # Run univariate comparison

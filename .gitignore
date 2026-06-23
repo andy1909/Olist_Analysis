@@ -5,16 +5,15 @@
 venv/
 env/
 ENV/
-bin/
-include/
-lib/
-share/
 pyvenv.cfg
 
 # Python bytecode/cache
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
+dist/
+build/
 
 # Large Datasets (Avoid committing big data files to GitHub)
 data/raw/*
@@ -44,3 +43,5 @@ Thumbs.db
 logs/
 *.log
 
+# Experiments cache
+experiments/__pycache__/

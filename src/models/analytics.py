@@ -17,7 +17,7 @@ def aggregate_kpis_for_dashboard(df):
 
     # 1. State Performance
     kpi_state = df.groupby('customer_state').agg(
-        total_orders=('order_id', 'count'),
+        total_orders=('order_id', 'nunique'),
         avg_freight_value=('freight_value', 'mean'),
         avg_lead_time_days=('lead_time_days', 'mean'),
         total_late_orders=('is_late', 'sum')
@@ -29,9 +29,10 @@ def aggregate_kpis_for_dashboard(df):
         kpi_state['late_rate_percent'] = 0
 
     # 2. Monthly Trend
-    df['order_month'] = df['order_purchase_timestamp'].dt.to_period('M')
-    kpi_month = df.groupby('order_month').agg(
-        total_orders=('order_id', 'count'),
+    df_copy = df.copy()
+    df_copy['order_month'] = df_copy['order_purchase_timestamp'].dt.to_period('M')
+    kpi_month = df_copy.groupby('order_month').agg(
+        total_orders=('order_id', 'nunique'),
         revenue=('price', 'sum'),
         avg_lead_time=('lead_time_days', 'mean')
     ).reset_index()

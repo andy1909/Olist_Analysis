@@ -1,8 +1,34 @@
 # Olist E-Commerce Demand Planning & Logistics Performance Report 🇧🇷📦
 
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-2.0%2B-150458?logo=pandas&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-1.7%2B-006600)
+![Power BI](https://img.shields.io/badge/Power%20BI-Dashboard-F2C811?logo=powerbi&logoColor=black)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 This report showcases data-driven decision-making, statistical time-series forecasting, and logistics performance analytics. The analysis and models are mapped onto two key supply chain management pillars:
 1.  **Demand Planning & Inventory Optimization**: Statistical diagnostics, lag-constrained hybrid residual forecasting, and out-of-sample benchmarking.
 2.  **Logistics Performance & Invoicing Phasing Tracking**: Regional lead time bottlenecks, customer sentiment reviews, and the impact of shipping delays on Bill of Lading (BL) linking and revenue recognition.
+
+---
+
+## Table of Contents
+
+- [1. Executive Summary](#1-executive-summary)
+- [2. Pillar 1: Demand Planning & Inventory Optimization](#2-pillar-1-demand-planning--inventory-optimization)
+  - [2.1. EDA & Time Series Diagnostics](#21-eda--time-series-diagnostics)
+  - [2.2. The Hybrid Residual Forecasting Framework](#22-the-hybrid-residual-forecasting-framework-lag-3-constrained)
+  - [2.3. Hyperparameter Tuning & Grid Search](#23-hyperparameter-tuning--grid-search)
+  - [2.4. Model Benchmarking & Performance](#24-model-benchmarking--performance)
+- [3. Pillar 2: Logistics Performance & Invoicing Tracking](#3-pillar-2-logistics-performance--invoicing-tracking)
+  - [3.1. Regional Lead-Time Bottlenecks](#31-regional-lead-time-bottlenecks--invoicing-skew)
+  - [3.2. Customer Review Sentiment Analysis (NLP)](#32-customer-review-sentiment-analysis-nlp-word2vec-model)
+  - [3.3. Bill of Lading & Revenue Realization](#33-bill-of-lading-bl-linking--revenue-realization-invoicing-phasing-analysis---simulated-case-study)
+- [4. Strategic Recommendations](#4-strategic-recommendations)
+- [5. Performance Tracking Dashboards](#5-performance-tracking-dashboards)
+- [6. Project Directory Structure](#6-project-directory-structure)
+- [7. Getting Started](#7-getting-started)
+- [8. Data Sources](#8-data-sources)
 
 ---
 
@@ -19,12 +45,14 @@ This project implements analytical solutions using the Olist e-commerce dataset 
 
 To strengthen replenishment logic and establish a rolling demand review, we developed a weekly order demand forecasting model.
 
-#### 2.1.1. EDA Sales Trend Analysis (From Notebook Section 5)
+### 2.1. EDA & Time Series Diagnostics
+
+#### 2.1.1. Sales Trend Analysis (From Notebook Section 5)
 In the initial Exploratory Data Analysis (EDA) of the Olist order database, we analyzed the monthly Gross Merchandise Value (GMV) and unique order counts over time. 
 
 ![Monthly Sales Trend](reports/figures/Chart_1_Monthly_Trend.png)
 
-As shown in the chart above (generated in our [Jupyter Notebook](file:///home/long/Documents/Olist_Analysis/notebooks/1.%20EDA%20OLIST%20ECOMMERCE.ipynb#L167-L185)), Olist experienced an upward growth trend from 2016 through 2018. This long-term non-stationary behavior made it mathematically necessary to run stationarity tests and perform differencing to prevent models from learning spurious growth trends.
+As shown in the chart above (generated in our [Jupyter Notebook](notebooks/1.%20EDA%20OLIST%20ECOMMERCE.ipynb)), Olist experienced an upward growth trend from 2016 through 2018. This long-term non-stationary behavior made it mathematically necessary to run stationarity tests and perform differencing to prevent models from learning spurious growth trends.
 
 #### 2.1.2. Time Series Diagnostics & Seasonality Proof (From Notebook Section 5)
 Following our EDA trend visualization, we ran detailed time-series diagnostics:
@@ -72,6 +100,16 @@ The models were evaluated out-of-sample on a **12-week test set** (March 4, 2018
 
 ![Forecast Comparison](reports/figures/Chart_5_Forecast_Comparison.png)
 
+#### 2.4.1. Demand Forecast Visualization
+The following chart shows the selected XGBoost Hybrid model's 12-week forward demand projection against the full historical order series:
+
+![Demand Forecast](reports/figures/Chart_3_Forecast.png)
+
+#### 2.4.2. LSTM Baseline (Excluded from Final Selection)
+A multivariate LSTM model was also trained as a deep learning baseline. However, with only 73 weeks of training data, the LSTM severely underperformed (MAPE 44.99%), confirming that classical statistical + gradient boosting hybrids are superior for small-sample time series:
+
+![LSTM Forecast](reports/figures/Chart_6_LSTM_Forecast.png)
+
 ---
 
 ## 3. Pillar 2: Logistics Performance & Invoicing Tracking
@@ -79,10 +117,10 @@ The models were evaluated out-of-sample on a **12-week test set** (March 4, 2018
 Monthly invoicing performance and revenue recognition are highly dependent on delivery lead times and Bill of Lading (BL) linking. Delays in delivery directly delay the confirmation of delivery, causing invoicing skew toward the end of the month.
 
 ### 3.1. Regional Lead-Time Bottlenecks & Invoicing Skew
-By analyzing Olist’s delivery records, we identified major regional differences in delivery speed and reliability:
+By analyzing Olist's delivery records, we identified major regional differences in delivery speed and reliability:
 *   **São Paulo (SP) Baseline**: SP represents the benchmark region. It handles **42.1% of national order volume** with a mean shipping lead time of only **8.26 days** and a low late delivery rate of **4.40%**. This enables steady, phased invoicing throughout the month.
 *   **Rio de Janeiro (RJ) Congestion (Primary Skew Driver)**: RJ handles high volumes but experiences an average lead time of **14.69 days** (nearly double SP) and a late delivery rate of **11.62%**.
-*   **Remote Northern Regions**: States like Alagoas (AL) experience delay rates of **20.84%** with shipping costs averaging **40-43 BRL** (nearly triple SP’s rates), causing severe billing lags.
+*   **Remote Northern Regions**: States like Alagoas (AL) experience delay rates of **20.84%** with shipping costs averaging **40-43 BRL** (nearly triple SP's rates), causing severe billing lags.
 
 ![Late Delivery Rate by State](reports/figures/Chart_2_State_Late_Rate.png)
 
@@ -188,6 +226,11 @@ Tracks order frequencies, transaction volumes, and customer satisfaction metrics
 
 ![Customer Behavior Dashboard](reports/dashboards/screenshots/customer_behaviour.png)
 
+### 5.3. Strategic Growth & Forecast Dashboard
+Provides a strategic overview of revenue trends, regional market share, year-over-year growth comparisons, and the 12-week demand forecast projection.
+
+![Strategic Growth Dashboard](reports/dashboards/screenshots/strategic_growth_forecast.png)
+
 ---
 
 ## 6. Project Directory Structure
@@ -197,48 +240,99 @@ Following enterprise-grade production design, the repository is structured modul
 ```
 Olist_Analysis/
 ├── config/
-│   └── config.json          # Centralized execution configuration
+│   └── config.json                # Centralized execution configuration
 ├── data/
-│   ├── raw/                 # Raw datasets (CSV, JSON, XML) - Immutable
-│   └── processed/           # Processed datasets and forecasting outputs
-├── models/                  # Serialized model assets (Word2Vec)
-├── notebooks/               # Jupyter notebooks for EDA and experimentation
+│   ├── raw/                       # Raw datasets (CSV, JSON, XML) — Immutable
+│   └── processed/                 # Processed datasets and forecasting outputs
+├── experiments/                   # Archived hyperparameter tuning scripts
+│   └── README.md
+├── models/                        # Serialized model assets (Word2Vec)
+├── notebooks/
 │   └── 1. EDA OLIST ECOMMERCE.ipynb
 ├── reports/
-│   ├── dashboards/          # Power BI dashboards and screenshots
-│   ├── figures/             # Diagnostic plots and visualizations
-│   └── presentation.pdf     # Slide deck presentation
-├── src/                     # Core codebase structured as python packages
-│   ├── data/                # Data loading and ingestion scripts
-│   │   ├── ingestion.py
-│   │   └── processing.py
-│   ├── models/              # Model training, forecasting and NLP analytics
-│   │   ├── analytics.py
-│   │   └── nlp.py
-│   └── utils/               # Supporting tools (logging, exceptions, config)
-│       ├── exception.py
-│       ├── logger.py
-│       ├── utils.py
-│       └── visualization.py
-├── scripts/                 # Entrypoint execution scripts
-│   ├── check_time_series.py # Stationarity and autocorrelation diagnostics
-│   ├── run_forecasting.py   # Demand forecasting algorithms (hybrid & baseline)
-│   └── run_nlp.py           # NLP review sentiment embedding extraction
-├── tests/                   # Automated unit tests package
-│   ├── test_analytics.py    # Test logic for KPI generation
-│   └── test_processing.py   # Test logic for data cleaning
-├── requirements.txt         # Package dependencies
-├── main.py                  # Main pipeline orchestrator
-└── README.md                # General project documentation
+│   ├── dashboards/                # Power BI dashboards and screenshots
+│   │   ├── powerbi/               # Power BI project files
+│   │   └── screenshots/           # Dashboard PNG exports
+│   ├── figures/                   # Diagnostic plots and visualizations
+│   └── presentation.pdf           # Slide deck presentation
+├── src/                           # Core Python package
+│   ├── __init__.py
+│   ├── data/                      # Data ingestion and processing
+│   │   ├── __init__.py
+│   │   ├── ingestion.py           # CSV/JSON/XML loaders, API fetcher
+│   │   └── processing.py         # Merging, cleaning, feature engineering
+│   ├── models/                    # Analytics, forecasting, and NLP
+│   │   ├── __init__.py
+│   │   ├── analytics.py           # KPI aggregation, hybrid forecasting
+│   │   └── nlp.py                 # TF-IDF, Word2Vec, word clouds
+│   └── utils/                     # Supporting tools
+│       ├── __init__.py
+│       ├── exception.py           # Custom exception handling
+│       ├── logger.py              # Structured logging setup
+│       ├── utils.py               # Helper functions (config, I/O)
+│       └── visualization.py       # Chart generation (matplotlib/seaborn)
+├── scripts/                       # Standalone execution scripts
+│   ├── run_diagnostics.py         # Stationarity and autocorrelation diagnostics
+│   ├── run_forecasting.py         # Demand forecasting (hybrid & baseline models)
+│   └── run_nlp.py                 # NLP review sentiment embedding extraction
+├── tests/                         # Automated unit tests
+│   ├── __init__.py
+│   ├── test_analytics.py          # Tests for KPI aggregation
+│   └── test_processing.py         # Tests for data cleaning & features
+├── .gitignore
+├── Makefile                       # Build automation (make run, make test, etc.)
+├── main.py                        # Main ETL & analytics pipeline orchestrator
+├── requirements.txt               # Python package dependencies
+├── setup.py                       # Package installation configuration
+└── README.md                      # This document
 ```
 
-To run the pipeline and generate the outputs, run:
+---
+
+## 7. Getting Started
+
+### Prerequisites
+- Python 3.9 or higher
+- pip package manager
+
+### Installation
 ```bash
-.venv/bin/python main.py
+# Clone the repository
+git clone https://github.com/andy1909/Olist_Analysis.git
+cd Olist_Analysis
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-To run the automated tests:
+### Running the Pipeline
 ```bash
-.venv/bin/python -m unittest discover -s tests
+# Option 1: Using Makefile (recommended)
+make run            # Run full ETL & analytics pipeline
+make forecast       # Run demand forecasting models
+make nlp            # Run NLP sentiment analysis
+make diagnostics    # Run time series diagnostics
+make test           # Run automated unit tests
+
+# Option 2: Direct Python execution
+.venv/bin/python main.py                        # Full pipeline
+.venv/bin/python scripts/run_forecasting.py     # Forecasting only
+.venv/bin/python scripts/run_nlp.py             # NLP only
+.venv/bin/python scripts/run_diagnostics.py     # Diagnostics only
+.venv/bin/python -m pytest tests/ -v            # Unit tests
 ```
 
+---
+
+## 8. Data Sources
+
+This project uses the **Brazilian E-Commerce Public Dataset by Olist** published on Kaggle:
+- **Source**: [Kaggle — Olist Brazilian E-Commerce](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
+- **Time Range**: September 2016 — August 2018
+- **Records**: ~100K orders across 9 relational tables
+- **Coverage**: Orders, customers, sellers, products, reviews, payments, geolocation

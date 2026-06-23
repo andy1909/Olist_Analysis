@@ -86,17 +86,14 @@ def create_logistics_features(df, df_holidays):
 
     # 5. Holiday Overlap (Count of holidays during transit)
     print("    - Calculating holidays in transit...")
-    holiday_dates = set(df_holidays['date'].dt.date)
+    holiday_dates = df_holidays['date'].values
 
-    def count_holidays(row):
-        start = row['order_purchase_timestamp']
-        end = row['order_delivered_customer_date']
-        if pd.isna(start) or pd.isna(end):
-            return 0
-        daterange = pd.date_range(start=start, end=end).date
-        return sum(1 for day in daterange if day in holiday_dates)
-
-    df['holidays_in_transit'] = df.apply(count_holidays, axis=1)
+    # Vectorized holiday counting
+    holiday_count = np.array([
+        ((df['order_purchase_timestamp'].values <= h) & (df['order_delivered_customer_date'].values >= h))
+        for h in holiday_dates
+    ]).sum(axis=0)
+    df['holidays_in_transit'] = holiday_count
 
     return df
 

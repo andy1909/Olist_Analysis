@@ -35,6 +35,8 @@ def prepare_timeseries_data(master_data_path):
     df_ts = df.set_index('order_purchase_timestamp')
     weekly_orders = df_ts.resample('W')['order_id'].nunique().fillna(0)
     weekly_orders = weekly_orders[weekly_orders.index >= '2017-01-01']
+    # Slice to end on 2018-05-20 to avoid the strike and subsequent outliers
+    weekly_orders = weekly_orders[weekly_orders.index <= '2018-05-20']
     weekly_orders = weekly_orders.asfreq('W').fillna(0).astype(float)
     return weekly_orders
 
@@ -148,7 +150,7 @@ def main():
     
     master_data_path = os.path.join(PROCESSED_DATA_DIR, 'Master_Logistics_Data.csv')
     if not os.path.exists(master_data_path):
-        print(f"LỖI: File không tồn tại {master_data_path}. Hãy chạy `main.py` trước.")
+        print(f"ERROR: File not found at {master_data_path}. Please run `main.py` first.")
         return
 
     # Prepare timeseries

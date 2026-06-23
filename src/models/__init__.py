@@ -1,2 +1,2 @@
-# src/models/__init__.py
-# Model forecasting and NLP analysis modules
+"""Models subpackage: analytics, forecasting, and NLP modules."""
+from src.models import analytics, nlp

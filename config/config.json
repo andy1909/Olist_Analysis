@@ -8,9 +8,20 @@
   },
   "forecasting": {
     "forecast_periods": 12,
-    "n_steps": 8,
-    "epochs": 100,
-    "lags": [1, 2, 3]
+    "seasonal_period": 13,
+    "lags": [1, 2, 3],
+    "cutoff_date": "2018-05-20",
+    "holt_winters": {
+      "trend": "add",
+      "seasonal": "add",
+      "damped_trend": false
+    },
+    "xgboost": {
+      "n_estimators": 50,
+      "max_depth": 3,
+      "learning_rate": 0.05,
+      "subsample": 1.0
+    }
   },
   "nlp": {
     "seed_keywords": {
@@ -19,8 +30,14 @@
       "negative_delivery": ["recebi", "atraso", "ainda", "chegou"],
       "negative_product": ["errado", "veio", "diferente", "problema"]
     },
-    "vector_size": 150,
-    "window": 5,
-    "min_count": 5
+    "word2vec": {
+      "vector_size": 150,
+      "window": 5,
+      "min_count": 5
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "logs"
   }
 }
