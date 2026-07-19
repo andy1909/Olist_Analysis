@@ -56,7 +56,7 @@ As shown in the chart above (generated in our [Jupyter Notebook](notebooks/1.%20
 
 #### 2.1.2. Time Series Diagnostics & Seasonality Proof (From Notebook Section 5)
 Following our EDA trend visualization, we ran detailed time-series diagnostics:
-*   **Stationarity Analysis (ADF Test)**: The raw weekly sales series ($Y_t$) was confirmed non-stationary due to growth ($p$-value of `0.27`). Applying first-order differencing ($Y'_t = Y_t - Y_{t-1}$) stabilized the mean, yielding an ADF $p$-value of `3.2e-07`, verifying stationarity and suitability for regression modeling.
+*   **Stationarity Analysis (ADF Test)**: The raw weekly sales series ($Y_t$) was confirmed non-stationary due to growth ($p$-value of `0.27`). Applying first-order differencing ($Y'_t = Y_t - Y_{t-1}$) stabilized the mean, yielding an ADF $p$-value of `5.81e-07`, verifying stationarity and suitability for regression modeling.
 *   **Seasonality Detection (ACF & PACF)**: The ACF and PACF diagnostics (shown below) revealed a strong positive spike at **Lag 1** (representing week-to-week demand momentum) and a seasonal wave peaking at **Lag 13** (confirming a quarterly/13-week business cycle).
 
 ![Stationarity Analysis](reports/figures/Chart_4_Stationarity_Analysis.png)
@@ -120,7 +120,7 @@ Monthly invoicing performance and revenue recognition are highly dependent on de
 By analyzing Olist's delivery records, we identified major regional differences in delivery speed and reliability:
 *   **São Paulo (SP) Baseline**: SP represents the benchmark region. It handles **42.1% of national order volume** with a mean shipping lead time of only **8.26 days** and a low late delivery rate of **4.40%**. This enables steady, phased invoicing throughout the month.
 *   **Rio de Janeiro (RJ) Congestion (Primary Skew Driver)**: RJ handles high volumes but experiences an average lead time of **14.69 days** (nearly double SP) and a late delivery rate of **11.62%**.
-*   **Remote Northern Regions**: States like Alagoas (AL) experience delay rates of **20.84%** with shipping costs averaging **40-43 BRL** (nearly triple SP's rates), causing severe billing lags.
+*   **Remote Northern Regions**: States like Alagoas (AL) experience delay rates of **20.84%** with shipping costs averaging **35.87 BRL** (over double SP's ~15.11 BRL rate). The most remote fringe states (RO at 41.33 BRL, RR at 43.09 BRL) reach nearly triple SP's rate, causing severe billing lags.
 
 ![Late Delivery Rate by State](reports/figures/Chart_2_State_Late_Rate.png)
 
@@ -133,19 +133,19 @@ The table below displays the keywords in Portuguese (with English translations) 
 | Sentiment Category | PT Keyword | EN Translation | Similarity Score | Operational Supply Chain Interpretation |
 | :--- | :---: | :---: | :---: | :--- |
 | **Positive Delivery** | `rapido` | Fast | **92.63%** | Customers heavily praise shipping speed. |
-| | `adiantado` | In advance | **90.01%** | Early delivery exceeds expectations. |
+| | `adiantado` | In advance | **90.02%** | Early delivery exceeds expectations. |
 | | `previsto` | Predicted/On-time | **87.67%** | Meeting the promised ETA is a positive driver. |
 | **Positive Product** | `otimo` | Excellent | **96.81%** | Standard high-quality product praise. |
 | | `maravilhoso` | Wonderful | **93.70%** | Emotional customer satisfaction. |
 | **Negative Delivery** | `recebimento` | Receipt | **92.99%** | Administrative or signature confirmation delays. |
-| | `venceu` / `passou` | Overdue / Passed | **92.34%** | Shipping lead time exceeded the promised date. |
-| | `trânsito` | In transit | **89.79%** | Orders stuck in transit corridors. |
-| | `semanas` | Weeks | **88.97%** | Long-haul shipping delays (weeks instead of days). |
-| | `parado` | Stopped / Stuck | **87.56%** | Warehouse sorting or carrier hub bottleneck. |
-| **Negative Product & Prep**| `errada` | Wrong item | **96.41%** | Wrong SKU delivered to the customer. |
-| | `quebrado` | Broken | **94.73%** | Damaged in transit due to poor packaging. |
-| | `mandaram` / `pedi` | Sent different | **94.15%** | Picking mistake (sent item different from requested). |
-| | `preto` / `rosa` / `azul` | Black / Pink / Blue | **95.63%** | Color mismatch (wrong SKU attribute picked in warehouse). |
+| | `venceu` / `passou` | Overdue / Passed | **92.35%** / **92.11%** | Shipping lead time exceeded the promised date. |
+| | `trânsito` | In transit | **89.80%** | Orders stuck in transit corridors. |
+| | `semanas` | Weeks | **88.98%** | Long-haul shipping delays (weeks instead of days). |
+| | `parado` | Stopped / Stuck | **87.57%** | Warehouse sorting or carrier hub bottleneck. |
+| **Negative Product & Prep**| `errada` | Wrong item | **96.42%** | Wrong SKU delivered to the customer. |
+| | `quebrado` | Broken | **94.74%** | Damaged in transit due to poor packaging. |
+| | `mandaram` / `pedi` | Sent different | **94.16%** / **93.11%** | Picking mistake (sent item different from requested). |
+| | `preto` / `rosa` / `azul` | Black / Pink / Blue | **95.63%** / **95.20%** / **94.73%** | Color mismatch (wrong SKU attribute picked in warehouse). |
 
 #### 3.2.2. Key Operational Takeaways from NLP
 1.  **Logistics Bottleneck Correlation**: The high semantic similarity of words like `parado` (stopped) and `semanas` (weeks) with negative delivery reviews confirms that transit congestion is the root cause of poor customer scores, validating our recommendation to bypass long-haul sorting hubs.

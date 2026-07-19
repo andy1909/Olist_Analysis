@@ -60,7 +60,7 @@ def forecast_orders(df, periods=12):
             seasonal_periods=13,
             trend='add',
             seasonal='add',
-            damped_trend=True,
+            damped_trend=False,
             initialization_method='estimated'
         ).fit(optimized=True)
 
