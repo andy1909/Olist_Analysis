@@ -425,7 +425,7 @@ def prepare_multivariate_lstm_data(master_path):
     # Identify features
     feature_cols = [
         'order_id', 'weekly_active_sellers', 'weekly_active_customers', 'weekly_product_variety',
-        'weekly_weekly_gmv', 'weekly_avg_basket_size', 'weekly_avg_price', 'weekly_avg_freight_value'
+        'weekly_gmv', 'weekly_avg_basket_size', 'weekly_avg_price', 'weekly_avg_freight_value'
     ]
     existing_cols = [col for col in feature_cols if col in df.columns]
     

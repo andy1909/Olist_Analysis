@@ -136,17 +136,19 @@ def create_aggregated_features(df):
     df_temp = df.set_index('order_purchase_timestamp')
 
     # Weekly aggregations
+    # NOTE: do NOT use 'weekly_' prefix in agg key names here —
+    # the rename below already adds 'weekly_' to every column.
     weekly_features = df_temp.resample('W').agg(
         active_sellers=('seller_id', 'nunique'),
         active_customers=('customer_id', 'nunique'),
         product_variety=('product_id', 'nunique'),
-        weekly_gmv=('price', 'sum'),
+        gmv=('price', 'sum'),             # → weekly_gmv  (not weekly_weekly_gmv)
         avg_basket_size=('order_item_id', 'mean'),
         avg_price=('price', 'mean'),
         avg_freight_value=('freight_value', 'mean')
     ).fillna(0)
 
-    # Prefix columns
+    # Prefix all columns uniformly: active_sellers → weekly_active_sellers, etc.
     weekly_features.rename(columns=lambda c: f'weekly_{c}', inplace=True)
 
     df['order_week'] = df['order_purchase_timestamp'].dt.to_period('W')
