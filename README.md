@@ -7,7 +7,7 @@
 ![Tests](https://img.shields.io/badge/Tests-150%20passed-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-An end-to-end supply chain analytics project built on the Brazilian Olist e-commerce dataset (73 weeks of clean transaction data, September 2016 – May 2018). The project is structured as a **production-grade Python package** with modular source code, an automated ETL pipeline, and a comprehensive unit + integration test suite (150 tests).
+An end-to-end supply chain analytics project built on the Brazilian Olist e-commerce dataset (88 weekly observations, October 2016 – August 2018). The project is structured as a **production-grade Python package** with modular source code, an automated ETL pipeline, and a comprehensive unit + integration test suite (150 tests).
 
 The analysis is organized around two supply chain management pillars:
 
@@ -41,10 +41,10 @@ The analysis is organized around two supply chain management pillars:
 
 | Dimension | Finding |
 | :--- | :--- |
-| **Dataset** | ~100K orders, 9 relational tables, Sep 2016 – May 2018 |
+| **Dataset** | ~100K orders across 9 relational tables, Oct 2016 – Aug 2018 |
 | **Forecast Accuracy** | XGBoost Hybrid MAPE **5.45%** on 12-week out-of-sample test |
-| **SP Lead Time** | **8.26 days** avg · **4.40%** late rate · 42.1% of national volume |
-| **RJ Lead Time** | **14.69 days** avg (1.78× SP) · **11.62%** late rate |
+| **SP Lead Time** | **8.73 days** avg · **5.63%** late rate · >40% of national volume |
+| **RJ Lead Time** | **15.16 days** avg (1.74× SP) · **12.59%** late rate |
 | **Revenue Impact (Simulated)** | RJ invoicing skew pushes **65%** of billings to final 5 days/month |
 | **Recommended Action** | Regional 3PL warehouse in RJ → pull revenue recognition forward **6–12 days** |
 
@@ -65,8 +65,8 @@ The EDA (see [Jupyter Notebook](notebooks/1.%20EDA%20OLIST%20ECOMMERCE.ipynb)) r
 Two diagnostic tests were run on the raw weekly order series (executed via `scripts/run_diagnostics.py`):
 
 - **ADF Stationarity Test**:
-  - Raw series $Y_t$: ADF $p$-value = `0.27` → **non-stationary** (unit root present, driven by growth trend).
-  - First-order differenced series $Y'_t = Y_t - Y_{t-1}$: ADF $p$-value = `5.81e-07` → **stationary**, confirming suitability for regression modeling.
+  - Raw series $Y_t$: ADF $p$-value = `0.279` → **non-stationary** (unit root present, driven by growth trend).
+  - First-order differenced series $Y'_t = Y_t - Y_{t-1}$: ADF $p$-value = `3.23e-07` → **stationary**, confirming suitability for regression modeling.
 
 - **ACF / PACF Analysis**:
   - Strong positive spike at **Lag 1** → week-to-week demand momentum.
@@ -103,7 +103,7 @@ The result is a forecast that remains dynamic and seasonal over the full 12-week
 
 ### 2.3. Hyperparameter Tuning & Grid Search
 
-Grid search cross-validation was performed on **61 weeks** of training data (cutoff: March 3, 2018):
+Grid search cross-validation was performed on **76 weeks** of training data (cutoff: March 3, 2018, from a total of 88 weekly observations spanning Jan 2017 – Sep 2018):
 
 | Component | Best Parameters |
 | :--- | :--- |
@@ -124,9 +124,10 @@ Out-of-sample evaluation on a **12-week held-out test set** (March 4 – May 20,
 | Random Forest Hybrid | 98.25 | 125.12 | 5.89% | 🥈 High accuracy, slightly higher variance |
 | LightGBM Hybrid | 109.46 | 146.15 | 6.84% | 🥉 Underperforms on low-volume peaks |
 | Holt-Winters (Baseline) | 129.48 | 143.88 | 8.03% | Classical benchmark, misses short-term shocks |
-| LSTM Multivariate | — | — | 44.99% | ❌ Excluded — insufficient training data (73 weeks) |
+| SARIMA | 317.39 | 537.01 | 18.02% | ❌ Excluded — overfits to Black Friday outlier |
+| LSTM (Univariate) | 746.32 | 769.78 | 44.99% | ❌ Excluded — insufficient data for deep learning |
 
-> **Note**: LSTM was included as a research baseline only. With 73 weeks of data, deep learning models are severely data-starved and are not suitable for production planning. Classical + gradient boosting hybrids are superior for small-sample supply chain time series.
+> **Note**: LSTM was included as a research baseline only. With 76 training weeks, deep learning models are severely data-starved and not suitable for production planning. Classical statistical + gradient boosting hybrids are superior for small-sample supply chain time series.
 
 ![Forecast Comparison](reports/figures/Chart_5_Forecast_Comparison.png)
 
@@ -144,14 +145,15 @@ Monthly revenue recognition is directly governed by delivery lead times. Delayed
 
 Analysis of delivery records across all 27 Brazilian states reveals major regional disparities:
 
-| Region | Avg Lead Time (Days) | Late Delivery Rate | Avg Freight (BRL) | Invoicing Profile |
-| :--- | :---: | :---: | :---: | :--- |
-| **São Paulo (SP)** | 8.26 | 4.40% | ~15.11 | Balanced, predictable phasing |
-| **Rio de Janeiro (RJ)** | 14.69 | 11.62% | ~20+ | ⚠️ Congested — primary skew driver |
-| **Alagoas (AL)** | ~18.5 | 20.84% | ~35.87 | ⚠️ High delay & freight cost |
-| **Remote North (RO, RR)** | 20.50+ | 25%+ | 41–43 | ⚠️ Extreme back-end skew |
+| Region | Orders | Avg Lead Time (Days) | Late Delivery Rate | Avg Freight (BRL) | Invoicing Profile |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **São Paulo (SP)** | 47,720 | 8.73 | 5.63% | 15.11 | ✅ Benchmark — balanced phasing |
+| **Rio de Janeiro (RJ)** | 14,668 | 15.16 | 12.59% | 20.91 | ⚠️ Congested — primary skew driver |
+| **Alagoas (AL)** | 448 | 24.48 | 23.21% | 35.87 | ⚠️ Highest late rate nationally |
+| **Roraima (RR)** | 46 | 27.83 | 10.87% | 43.09 | ⚠️ Longest transit nationally |
+| **Rondônia (RO)** | 249 | 19.28 | 4.03% | 41.33 | ⚠️ Highest freight cost nationally |
 
-**São Paulo (SP)** represents the national benchmark: it handles **42.1% of total order volume** with the shortest lead time and lowest late rate. **Rio de Janeiro (RJ)** handles significant volume but experiences average transit nearly **1.78× longer than SP**, creating a persistent invoicing hockey-stick effect.
+**São Paulo (SP)** represents the national benchmark with **47,720 orders** (>40% of national volume), the shortest lead time, and lowest late rate. **Rio de Janeiro (RJ)** is the primary logistics bottleneck: with **15.16 days** average transit (**1.74× longer than SP**) and a **12.59% late delivery rate**, RJ orders consistently miss the estimated delivery date — driving BL linking delays and invoicing skew.
 
 ![Late Delivery Rate by State](reports/figures/Chart_2_State_Late_Rate.png)
 
@@ -167,25 +169,31 @@ A **Gensim Word2Vec** model (150-dimensional embeddings) was trained on the full
 | :--- | :---: | :---: | :---: | :--- |
 | **Positive — Delivery** | `rapido` | Fast | 92.63% | Speed is the #1 satisfaction driver |
 | | `adiantado` | In advance | 90.02% | Early delivery exceeds expectations |
-| | `previsto` | On-time | 87.67% | Meeting the promised ETA is critical |
-| **Positive — Product** | `otimo` | Excellent | 96.81% | Standard quality praise |
-| | `maravilhoso` | Wonderful | 93.70% | Emotional satisfaction signal |
+| | `perfeita` | Perfect | 88.04% | Arrival in pristine condition praised |
+| | `previsto` | Predicted/On-time | 87.67% | Meeting the promised ETA is critical |
+| **Positive — Product** | `otimo` | Excellent | 96.81% | Standard high-quality product praise |
+| | `maravilhoso` | Wonderful | 93.70% | Emotional customer satisfaction |
+| | `exelente` | Excellent | 91.53% | Quality satisfaction signal |
+| | `adorei` | I loved it | 91.40% | Strong purchase satisfaction |
 | **Negative — Delivery** | `recebimento` | Receipt | 92.99% | Confirmation / signature delays |
-| | `venceu` / `passou` | Overdue | 92.35% / 92.11% | Missed promised delivery date |
-| | `transito` | In transit | 89.80% | Orders stalled at sorting hubs |
-| | `semanas` | Weeks | 88.98% | Long-haul delays (weeks, not days) |
-| | `parado` | Stopped | 87.57% | Carrier hub congestion |
-| **Negative — Product** | `errada` | Wrong item | 96.42% | Wrong SKU delivered |
+| | `venceu` | Won/Overdue | 92.35% | Shipping exceeded promised deadline |
+| | `passou` | Passed | 92.11% | Missed promised delivery date |
+| | `passaram` | Passed (plural) | 91.51% | Multiple days past promised date |
+| | `trânsito` | In transit | 89.80% | Orders stalled at sorting hubs |
+| **Negative — Product** | `errada` | Wrong item | 96.42% | Wrong SKU delivered — picking error |
+| | `preto` | Black | 95.63% | Color mismatch — wrong color variant |
+| | `cartucho` | Cartridge | 95.25% | Fragile electronics damage in transit |
+| | `rosa` | Pink | 95.20% | Color mismatch — picking error |
 | | `quebrado` | Broken | 94.74% | Transit damage — poor packaging |
-| | `preto`/`rosa`/`azul` | Black/Pink/Blue | 95–94% | Color mismatch — picking error |
+| | `azul` | Blue | 94.73% | Color mismatch — picking error |
 
 #### Operational Takeaways
 
-1. **Transit Congestion Confirmed**: The high semantic weight of `parado` (stopped) and `semanas` (weeks) in negative reviews validates that sorting-hub congestion is the root cause of poor NPS scores in long-haul lanes — consistent with the RJ lead-time findings in Section 3.1.
+1. **Transit Congestion Confirmed**: The high semantic weight of delay words like `recebimento` (receipt/confirmation), `venceu` (overdue), and `passou` (passed deadline) in negative reviews confirms that missed delivery promises are the root cause of poor NPS scores in long-haul lanes — validating the RJ lead-time findings in Section 3.1.
 
-2. **Systemic Picking Errors at SP Warehouse**: A distinct cluster of negative reviews groups color words (`preto`, `rosa`, `azul`) with `errada` (wrong). This statistically confirms that warehouse staff frequently ship the wrong color variant of an SKU. **Recommended fix**: mandatory barcode scan at the packing dock before shipment.
+2. **Systemic Picking Errors at SP Warehouse**: A distinct cluster of negative reviews groups color words (`preto`, `rosa`, `azul`) with `errada` (wrong item). This statistically confirms that warehouse staff frequently ship the wrong color variant of an SKU. **Recommended fix**: mandatory barcode scan at the packing dock before shipment.
 
-3. **Fragile Electronics Damage**: Words like `quebrado` (broken), `cartridge`, `cables` cluster together — indicating specific fragile SKU categories that require double-walled protective packaging.
+3. **Fragile Electronics Damage**: `cartucho` (cartridge), alongside `quebrado` (broken), form a tight semantic cluster — indicating specific fragile electronics SKUs that suffer high transit damage rates. These categories require customized double-walled protective packaging.
 
 ![Positive Feedback Word Cloud](reports/figures/wordcloud_embedding_AGGREGATED_positive.png)
 ![Negative Feedback Word Cloud](reports/figures/wordcloud_embedding_AGGREGATED_negative.png)
@@ -201,9 +209,9 @@ A **Gensim Word2Vec** model (150-dimensional embeddings) was trained on the full
 
 | Destination | Avg Transit (Days) | Avg BL Linking Lag (Days) | Wk 1 Invoicing | Wk 2 Invoicing | Wk 3 Invoicing | Wk 4 Invoicing | Pattern |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **São Paulo (SP)** | 8.26 | 1.20 | 22% | 24% | 26% | 28% | ✅ Balanced phasing |
-| **Rio de Janeiro (RJ)** | 14.69 | 5.80 | 5% | 12% | 18% | **65%** | ⚠️ Hockey-stick skew |
-| **North / Remote** | 20.50+ | 9.40 | 2% | 5% | 13% | **80%** | ⚠️ Extreme back-end lag |
+| **São Paulo (SP)** | 8.73 | 1.20 | 22% | 24% | 26% | 28% | ✅ Balanced phasing |
+| **Rio de Janeiro (RJ)** | 15.16 | 5.80 | 5% | 12% | 18% | **65%** | ⚠️ Hockey-stick skew |
+| **North / Remote (AL avg)** | 24.48 | 9.40 | 2% | 5% | 13% | **80%** | ⚠️ Extreme back-end lag |
 
 **Key Findings**:
 - **SP**: Electronic POD enables BL linking within **1.2 days** of delivery. Invoicing is evenly spread across the month → predictable cash flow.
@@ -216,7 +224,7 @@ A **Gensim Word2Vec** model (150-dimensional embeddings) was trained on the full
 
 ### 4.1. Establish a Regional 3PL Warehouse in Rio de Janeiro
 Pre-position top-selling SKUs in a third-party logistics (3PL) facility in the RJ metropolitan area.
-- **Impact**: Reduces average lead time from **14.69 → under 6 days**, enabling BL linking within 1–2 days and pulling invoice generation forward by approximately **8 days**.
+- **Impact**: Reduces average lead time from **15.16 → under 6 days**, enabling BL linking within 1–2 days and pulling invoice generation forward by approximately **8 days**.
 
 ### 4.2. Optimize Commercial Terms (Incoterms Shift)
 Negotiate a shift for major B2B accounts from **DAP (Delivered at Place)** to **FCA (Free Carrier)** or **CPT (Carriage Paid To)**.
